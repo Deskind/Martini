@@ -13,13 +13,18 @@ import com.deskind.martiniboot.binary.entities.Authorization;
 import com.deskind.martiniboot.binary.entities.Authorize;
 import com.deskind.martiniboot.binary.entities.MessageType;
 import com.deskind.martiniboot.entities.Account;
+import com.deskind.martiniboot.fxcontrollers.MainController;
+import com.deskind.martiniboot.trade.flow.RandomFlow;
 import com.google.gson.Gson;
 
 @ClientEndpoint
 public class ApplicationEndpoint {
+	
+	private RandomFlow flow;
+	
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
-		
+		MartiniBootApplication.getMainController().writeMessage("CONNECTED", false, true);
 	}
 	
 	@OnMessage
@@ -37,17 +42,25 @@ public class ApplicationEndpoint {
             	System.out.println(message);
             	return;
             }
+            
+            case "buy": {
+            	System.out.println(message);
+            }
     	}
 	}
 	
 	private void processAuthorize(String message, Gson gson) {
+		flow = MartiniBootApplication.getRandomFlow();
+		
+		System.out.println("Random flow is " + flow.toString());
+		
 		Authorization authorization = gson.fromJson(message, Authorization.class);
 		Authorize authorize = authorization.getAuthorize();
 		
-		MartiniBootApplication.getMainController().setBalance(authorize);
+		MainController controller = MartiniBootApplication.getMainController();
+		controller.setBalance(authorize);
+		controller.writeMessage("AUTHORIZED", false, true);
 		MartiniBootApplication.getLuckyGuy().setAccount(new Account(authorize));
-		
-		System.out.println("Authorize is = > " + authorize.toString());
 	}
 
 	@OnClose

@@ -41,7 +41,7 @@
       <Label layoutX="18.0" layoutY="76.0" text="Lot" />
       <TextField fx:id="lotInput" layoutX="19.0" layoutY="112.0" prefHeight="25.0" prefWidth="160.0" promptText="For example: 5.55" text="3" />
       <Label layoutX="21.0" layoutY="144.0" prefHeight="17.0" prefWidth="121.0" text="Time Frame(seconds)" />
-      <TextField fx:id="timeInput" layoutX="19.0" layoutY="161.0" prefHeight="25.0" prefWidth="160.0" promptText="Example: 600" text="30" />
+      <TextField fx:id="expirationInput" layoutX="19.0" layoutY="161.0" prefHeight="25.0" prefWidth="160.0" promptText="Example: 600" text="30" />
       <Button layoutX="25.0" layoutY="335.0" mnemonicParsing="false" onAction="#start" prefHeight="25.0" prefWidth="131.0" text="START TRADING" textFill="#2f3030" />
       <Label fx:id="balanceLabel" layoutX="199.0" layoutY="489.0" prefHeight="17.0" prefWidth="60.0" text="0.00" textFill="#052d75">
          <font>
@@ -49,7 +49,6 @@
          </font>
       </Label>
       <Button layoutX="26.0" layoutY="371.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="131.0" text="STOP_TRADING" />
-      <Button layoutX="25.0" layoutY="406.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="131.0" text="Clear chart" />
       <Accordion layoutX="205.0" layoutY="68.0" prefHeight="400.0" prefWidth="1012.0">
         <panes>
           <TitledPane animated="false" text="Common Loss">
@@ -96,7 +95,6 @@
             </TitledPane>
         </panes>
       </Accordion>
-      <Button layoutX="25.0" layoutY="443.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="131.0" text="CLEAR LOG" />
       <Label layoutX="19.0" layoutY="194.0" text="Stop loss" />
       <TextField fx:id="stopLossInput" layoutX="20.0" layoutY="211.0" prefHeight="25.0" prefWidth="160.0" promptText="Example : 100" text="1000" />
       <Label layoutX="270.0" layoutY="486.0" text="Profit:" textFill="#052d75">
@@ -116,11 +114,10 @@
       </Label>
       <Label layoutX="19.0" layoutY="93.0" prefHeight="17.0" prefWidth="121.0" text="Min 0.8$" textFill="#06651f" />
       <Button layoutX="427.0" layoutY="487.0" mnemonicParsing="false" text="ReqToStopTrading" />
-      <Label disable="true" layoutX="580.0" layoutY="490.0" text="Fix Profit" />
-      <TextField fx:id="fixProfitInputField" disable="true" layoutX="641.0" layoutY="486.0" prefHeight="25.0" prefWidth="100.0" text="30" />
-      <Label layoutX="755.0" layoutY="491.0" text="Time to wait" />
-      <TextField fx:id="waitTimeInput" layoutX="827.0" layoutY="487.0" prefHeight="25.0" prefWidth="100.0" text="3" />
-      <Label layoutX="945.0" layoutY="491.0" text="Martini factor" />
-      <TextField fx:id="martiniFactorInput" layoutX="1029.0" layoutY="487.0" prefHeight="25.0" prefWidth="47.0" text="0.8" />
+      <Label layoutX="592.0" layoutY="491.0" text="Time to wait" />
+      <TextField fx:id="waitTimeInput" layoutX="664.0" layoutY="487.0" prefHeight="25.0" prefWidth="100.0" text="3" />
+      <Label layoutX="782.0" layoutY="491.0" text="Martini factor" />
+      <TextField fx:id="martiniFactorInput" layoutX="866.0" layoutY="487.0" prefHeight="25.0" prefWidth="47.0" text="0.8" />
+      <CheckBox fx:id="randomCheck" layoutX="22.0" layoutY="251.0" mnemonicParsing="false" selected="true" text="RandomMode" />
     </children>
 </AnchorPane>

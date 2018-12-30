@@ -1,21 +1,34 @@
 package com.deskind.martiniboot.fxcontrollers;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+
 import com.deskind.martiniboot.MartiniBootApplication;
+import com.deskind.martiniboot.analysys.DoubleCallPutAnalyst;
 import com.deskind.martiniboot.binary.entities.Authorize;
 import com.deskind.martiniboot.entities.Account;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.managers.UserInputManager;
+import com.deskind.martiniboot.trade.Ledger;
+import com.deskind.martiniboot.trade.Stash;
+import com.deskind.martiniboot.trade.SymbolGenerator;
+import com.deskind.martiniboot.trade.flow.RandomFlow;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.TextField;
+import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
 public class MainController {
+	
+	private SimpleDateFormat dateFormatter = new SimpleDateFormat("(yyyy-MM-dd HH:mm:ss)");
 	
 	public MainController() {
 		MartiniBootApplication.setMainController(this);
@@ -31,6 +44,9 @@ public class MainController {
 	
 	@FXML
 	private LineChart lossChart;
+	
+	@FXML
+	private CheckBox randomCheck;
 	
 	@FXML
 	private Label virRealLabel, balanceLabel;
@@ -56,7 +72,15 @@ public class MainController {
     		
     		MartiniBootApplication.getSocketPlug().authorize(luckyGuy.getToken());
     		
-    		
+    		//random mode
+    		if(randomCheck.isSelected()) { 
+    			RandomFlow randomFlow = new RandomFlow(luckyGuy,
+    					new Ledger(),
+    					new DoubleCallPutAnalyst(),
+    					new ArrayList<Stash>());
+    			
+    			MartiniBootApplication.startRandomFlow(randomFlow);
+    		}
     		
     		
     	}
@@ -82,7 +106,47 @@ public class MainController {
             }
         });
 	}
+	
+	/**
+	 * Write message to logs 'TextFlow'
+	 * @param message
+	 */
+	public void writeMessage(String message, boolean makeRed, boolean log){
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                //create and decorate date element
+            	Text date = new Text(dateFormatter.format(new Date()));
+                date.getStyleClass().add("date-text");
+                
+                //create and decorate message itself
+                Text messageText = new Text(message);
+                
+                //red color if error
+                if(makeRed){
+                    messageText.getStyleClass().add("error-text");
+                }else{
+                    messageText.getStyleClass().add("regular-text");
+                }
+                
+                //write to log messages or to trader messages
+                if(log) {
+                	logMessages.getChildren().addAll(date, messageText);
+                }else{
+                	tradeMessages.getChildren().
+                	addAll(date, messageText);
+                }
+            }
+        });
     
     
-    
+	}
+
+	public long getDuration() {
+		return Integer.parseInt(expirationInput.getText());
+	}
+	
+	public static String getSymbol() {
+		return SymbolGenerator.getSymbol(); 
+	}
 }

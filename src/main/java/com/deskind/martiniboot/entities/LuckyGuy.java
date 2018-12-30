@@ -26,6 +26,15 @@ public class LuckyGuy {
 	public void setToken(String token) {
 		this.token = token;
 	}
+
+	public float getLot() {
+		return lot;
+	}
+
+	public void setLot(float lot) {
+		this.lot = lot;
+	}
+
 	
-	
+
 }

@@ -1,0 +1,22 @@
+.button {
+    -fx-font-weight: bold;
+}
+
+.error-text{
+    -fx-font: 12px Tahoma;
+    -fx-fill: tomato;
+}
+
+.regular-text{
+    -fx-font: 12px Tahoma;
+    -fx-fill: cadetblue;
+}
+
+.delimiter-text{
+    -fx-fill: darkblue;
+}
+
+.date-text{
+    -fx-font: 12px Tahoma;
+    -fx-fill: darkblue;
+}

@@ -15,6 +15,7 @@ import com.deskind.martiniboot.MartiniBootApplication;
  *
  */
 public class SocketPlug {
+	
 	private final String appId = "15135";
 	private Session session;
 			
