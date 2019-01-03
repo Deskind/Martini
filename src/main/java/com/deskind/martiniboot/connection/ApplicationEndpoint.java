@@ -12,15 +12,22 @@ import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.binary.entities.Authorization;
 import com.deskind.martiniboot.binary.entities.Authorize;
 import com.deskind.martiniboot.binary.entities.MessageType;
+import com.deskind.martiniboot.binary.responses.TransactionUpdate;
 import com.deskind.martiniboot.entities.Account;
 import com.deskind.martiniboot.fxcontrollers.MainController;
+import com.deskind.martiniboot.trade.flow.Flow;
 import com.deskind.martiniboot.trade.flow.RandomFlow;
 import com.google.gson.Gson;
 
 @ClientEndpoint
 public class ApplicationEndpoint {
 	
-	private RandomFlow flow;
+	private Flow flow;
+	private String transactionStreamId;
+	
+	public ApplicationEndpoint() {
+		super();
+	}
 	
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
@@ -34,7 +41,10 @@ public class ApplicationEndpoint {
 		
     	switch (type) {
             case "authorize": {
+            	flow = MartiniBootApplication.getFlow();
+            	
             	processAuthorize(message, gson);
+            	
                 return;
             }
             
@@ -45,14 +55,29 @@ public class ApplicationEndpoint {
             
             case "buy": {
             	System.out.println(message);
+            	return;
+            }
+            
+            case "transaction": {
+            	TransactionUpdate update = gson.fromJson(message, TransactionUpdate.class);
+            	String id = update.getTransaction().getId();
+            	
+            	//first transaction message
+            	if(transactionStreamId == null) {
+            		transactionStreamId = id;
+            		return;
+            	}
+            	
+            	if(transactionStreamId.equals(id)) {
+            		flow.take(update);
+            	}
+            	
+            	return;
             }
     	}
 	}
 	
 	private void processAuthorize(String message, Gson gson) {
-		flow = MartiniBootApplication.getRandomFlow();
-		
-		System.out.println("Random flow is " + flow.toString());
 		
 		Authorization authorization = gson.fromJson(message, Authorization.class);
 		Authorize authorize = authorization.getAuthorize();
@@ -60,7 +85,6 @@ public class ApplicationEndpoint {
 		MainController controller = MartiniBootApplication.getMainController();
 		controller.setBalance(authorize);
 		controller.writeMessage("AUTHORIZED", false, true);
-		MartiniBootApplication.getLuckyGuy().setAccount(new Account(authorize));
 	}
 
 	@OnClose

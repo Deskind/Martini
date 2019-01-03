@@ -8,6 +8,7 @@ public class Ledger {
 	private float martiniFactor;
 	private int oneRowWins;
 	private int oneRowLooses;
+	private int allContractsCounter;
 	
 	public float getLoss() {
 		return loss;
@@ -38,6 +39,12 @@ public class Ledger {
 	}
 	public void setOneRowLooses(int oneRowLooses) {
 		this.oneRowLooses = oneRowLooses;
+	}
+	public int getAllContractsCounter() {
+		return allContractsCounter;
+	}
+	public void setAllContractsCounter(int allContractsCounter) {
+		this.allContractsCounter = allContractsCounter;
 	}
 	
 	

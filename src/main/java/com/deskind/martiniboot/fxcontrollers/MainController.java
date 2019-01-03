@@ -13,6 +13,7 @@ import com.deskind.martiniboot.managers.UserInputManager;
 import com.deskind.martiniboot.trade.Ledger;
 import com.deskind.martiniboot.trade.Stash;
 import com.deskind.martiniboot.trade.SymbolGenerator;
+import com.deskind.martiniboot.trade.flow.Flow;
 import com.deskind.martiniboot.trade.flow.RandomFlow;
 
 import javafx.application.Platform;
@@ -52,7 +53,9 @@ public class MainController {
 	private Label virRealLabel, balanceLabel;
 	
     @FXML
-    public void start(ActionEvent event) {
+    public void start(ActionEvent event) throws InterruptedException {
+    	
+    	Flow flow = null;
     	
     	userInputManager = new UserInputManager(tokenInput,
 											    			lotInput,
@@ -68,21 +71,34 @@ public class MainController {
     		LuckyGuy luckyGuy = new LuckyGuy(tokenInput.getText(),
 											Float.parseFloat(lotInput.getText()));
     		
-    		MartiniBootApplication.setLuckyGuy(luckyGuy);
+    		luckyGuy.setAccount(new Account());
     		
-    		MartiniBootApplication.getSocketPlug().authorize(luckyGuy.getToken());
+    		MartiniBootApplication.setLuckyGuy(luckyGuy);
     		
     		//random mode
     		if(randomCheck.isSelected()) { 
-    			RandomFlow randomFlow = new RandomFlow(luckyGuy,
+    			flow = new RandomFlow(luckyGuy,
     					new Ledger(),
     					new DoubleCallPutAnalyst(),
     					new ArrayList<Stash>());
     			
-    			MartiniBootApplication.startRandomFlow(randomFlow);
+    			MartiniBootApplication.setFlow(flow);
     		}
     		
+    		String authorize = String.format("{\"authorize\": \"%s\"}", luckyGuy.getToken());
     		
+    		Thread.sleep(1000);
+    		
+    		String subscribe = "{\"transaction\": 1, \"subscribe\": 1}";
+    		
+    		Thread.sleep(1000);
+    		
+    		MartiniBootApplication.getSocketPlug().sendMessage(authorize);
+    		System.out.println("...Authorized");
+    		MartiniBootApplication.getSocketPlug().sendMessage(subscribe);
+    		System.out.println("...Subscribed");
+    		
+    		flow.makeLuckyBet(null);
     	}
     }
     

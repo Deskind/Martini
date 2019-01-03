@@ -12,6 +12,7 @@ import com.deskind.martiniboot.connection.SocketPlug;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.fxcontrollers.MainController;
 import com.deskind.martiniboot.runnables.AliveTask;
+import com.deskind.martiniboot.trade.flow.Flow;
 import com.deskind.martiniboot.trade.flow.RandomFlow;
 
 import javafx.application.Application;
@@ -37,7 +38,7 @@ public class MartiniBootApplication extends Application{
 	
 	private static Preferences preferences;
 	
-	private static RandomFlow randomFlow;
+	private static Flow flow;
 
 	public static void main(String[] args) {
 		
@@ -129,14 +130,13 @@ public class MartiniBootApplication extends Application{
 		return mainController;
 	}
 
-	public static void startRandomFlow(RandomFlow randomFlow) {
-		MartiniBootApplication.randomFlow = randomFlow;
-		
-		randomFlow.makeLuckyBet();
+	public static void setFlow(Flow flow) {
+		MartiniBootApplication.flow = flow;
 	}
 
-	public static RandomFlow getRandomFlow() {
-		return randomFlow;
+	public static Flow getFlow() {
+		return flow;
 	}
+
 }
 

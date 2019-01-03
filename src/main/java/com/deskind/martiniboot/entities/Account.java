@@ -23,6 +23,8 @@ public class Account {
 		this.real = authorize.getIs_virtual();
 	}
 
+	public Account() {	}
+
 	public float getBalance() {
 		return balance;
 	}

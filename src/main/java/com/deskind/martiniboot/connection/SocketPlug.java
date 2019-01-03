@@ -35,17 +35,19 @@ public class SocketPlug {
 	}
 
 	/**
-	 * Authorizing with token
+	 * Authorize with token
 	 * @param token
 	 */
 	public void authorize(String token) {
 		String authorize = String.format("{\"authorize\": \"%s\"}", token);
 		
-		try {
-			session.getBasicRemote().sendText(authorize);
-		} catch (IOException e) {
-			System.out.println("+++Cant authorize+++");
-			e.printStackTrace();
+		if(this.connected()) {
+			try {
+				session.getBasicRemote().sendText(authorize);
+			} catch (IOException e) {
+				System.out.println("+++Cant authorize+++");
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -61,4 +63,5 @@ public class SocketPlug {
 				e.printStackTrace();
 			}
 	}
+
 }

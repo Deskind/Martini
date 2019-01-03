@@ -6,7 +6,9 @@ import java.util.List;
 import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.analysys.Analyst;
 import com.deskind.martiniboot.binary.entities.BuyParameters;
+import com.deskind.martiniboot.binary.entities.Transaction;
 import com.deskind.martiniboot.binary.requests.BuyRequest;
+import com.deskind.martiniboot.binary.responses.TransactionUpdate;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.fxcontrollers.MainController;
 import com.deskind.martiniboot.trade.Ledger;
@@ -19,7 +21,7 @@ import com.google.gson.Gson;
  * @author deski
  *
  */
-public class RandomFlow {
+public class RandomFlow implements Flow{
 	private LuckyGuy luckyGuy;
 	private Ledger ledger;
 	private Analyst analyst;
@@ -33,17 +35,17 @@ public class RandomFlow {
 		this.stashes = stashes;
 	}
 	
-	public void makeLuckyBet() {
-		BuyParameters parameters = new BuyParameters(luckyGuy.getLot(),
-				analyst.makeDescision(),
-				MartiniBootApplication.getMainController().getDuration(),
-				MainController.getSymbol());
-		BuyRequest buyRequest = new BuyRequest(parameters);
-		
-		System.out.println("Buy request is : " + buyRequest);
-		
-		MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(buyRequest));
-		
+	@Override
+	public void makeLuckyBet(TransactionUpdate update) {
+		if(update == null) {
+			BuyParameters parameters = new BuyParameters(luckyGuy.getLot(),
+					analyst.makeDescision(),
+					MartiniBootApplication.getMainController().getDuration(),
+					MainController.getSymbol());
+			BuyRequest buyRequest = new BuyRequest(parameters);
+			
+			MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(buyRequest));
+		}
 		
 	}
 	
@@ -78,6 +80,36 @@ public class RandomFlow {
 
 	public void setStashes(List<Stash> stashes) {
 		this.stashes = stashes;
+	}
+
+	@Override
+	public void take(TransactionUpdate update) {
+		MainController controller = MartiniBootApplication.getMainController();
+		Transaction transaction = update.getTransaction();
+		String action = transaction.getAction();
+		
+		
+		if(action.equals("sell")) {
+			float amount = update.getTransaction().getAmount();
+			
+			if(amount > 0.1) {
+				winCase();
+			}else {
+				looseCase();
+			}
+				
+		}
+		
+	}
+
+	private void looseCase() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void winCase() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
