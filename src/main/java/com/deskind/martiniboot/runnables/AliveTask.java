@@ -6,6 +6,8 @@ import com.deskind.martiniboot.connection.SocketPlug;
 
 public class AliveTask extends TimerTask {
 	
+	private final String PING_MESSAGE = "{\"ping\": 1}";
+	
 	private SocketPlug plug;
 	
 	public AliveTask(SocketPlug plug) {
@@ -14,8 +16,11 @@ public class AliveTask extends TimerTask {
 
 	@Override
 	public void run() {
-			String message = "{\"ping\": 1}";
-			plug.sendMessage(message);
+		if(plug.connected()) {
+			plug.sendMessage(PING_MESSAGE);
+		}else {
+			System.out.println("...Enable to send ping message because of closed session ...");
+		}
 	}
 
 }

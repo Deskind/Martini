@@ -1,12 +1,15 @@
 package com.deskind.martiniboot.fxcontrollers;
 
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.ResourceBundle;
 
 import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.analysys.DoubleCallPutAnalyst;
 import com.deskind.martiniboot.binary.entities.Authorize;
+import com.deskind.martiniboot.connection.SocketPlug;
 import com.deskind.martiniboot.entities.Account;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.managers.UserInputManager;
@@ -19,17 +22,20 @@ import com.deskind.martiniboot.trade.flow.RandomFlow;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.chart.LineChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Labeled;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
-public class MainController {
+public class MainController implements Initializable{
 	
 	private SimpleDateFormat dateFormatter = new SimpleDateFormat("(yyyy-MM-dd HH:mm:ss)");
+	
+	private XYChart.Series<Number, Number> lossSeries;
 	
 	public MainController() {
 		MartiniBootApplication.setMainController(this);
@@ -44,17 +50,30 @@ public class MainController {
 	private TextFlow tradeMessages, logMessages;
 	
 	@FXML
-	private LineChart lossChart;
+	private LineChart<Number, Number> lossChart;
 	
 	@FXML
 	private CheckBox randomCheck;
 	
 	@FXML
-	private Label virRealLabel, balanceLabel;
+	private Label virRealLabel, balanceLabel, profitLabel;
+	
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		lossSeries = new XYChart.Series<Number, Number>();
+		lossChart.getData().add(lossSeries);
+	}
+	
+	@FXML
+	public void closeSocket(ActionEvent event) {
+		MartiniBootApplication.getSocketPlug().disconnect();
+	}
 	
     @FXML
     public void start(ActionEvent event) throws InterruptedException {
     	
+    	SocketPlug plug = MartiniBootApplication.getSocketPlug();
+    	LuckyGuy luckyGuy = null;
     	Flow flow = null;
     	
     	userInputManager = new UserInputManager(tokenInput,
@@ -68,7 +87,7 @@ public class MainController {
     	boolean valid = userInputManager.validate();
         
     	if(valid) {
-    		LuckyGuy luckyGuy = new LuckyGuy(tokenInput.getText(),
+    		luckyGuy = new LuckyGuy(tokenInput.getText(),
 											Float.parseFloat(lotInput.getText()));
     		
     		luckyGuy.setAccount(new Account());
@@ -82,21 +101,14 @@ public class MainController {
     					new DoubleCallPutAnalyst(),
     					new ArrayList<Stash>());
     			
+    			float factor = Float.parseFloat(martiniFactorInput.getText());
+    			
+    			flow.getLedger().setMartiniFactor(factor);
+    			
     			MartiniBootApplication.setFlow(flow);
     		}
     		
-    		String authorize = String.format("{\"authorize\": \"%s\"}", luckyGuy.getToken());
-    		
-    		Thread.sleep(1000);
-    		
-    		String subscribe = "{\"transaction\": 1, \"subscribe\": 1}";
-    		
-    		Thread.sleep(1000);
-    		
-    		MartiniBootApplication.getSocketPlug().sendMessage(authorize);
-    		System.out.println("...Authorized");
-    		MartiniBootApplication.getSocketPlug().sendMessage(subscribe);
-    		System.out.println("...Subscribed");
+    		plug.authorize(luckyGuy.getToken()).subscribe();
     		
     		flow.makeLuckyBet(null);
     	}
@@ -157,12 +169,46 @@ public class MainController {
     
     
 	}
+	
+	public void addLossPoint(XYChart.Data<Number, Number> point){
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                lossSeries.getData().add(point);
+            }
+        });  
+        
+    }
 
 	public long getDuration() {
 		return Integer.parseInt(expirationInput.getText());
 	}
 	
-	public static String getSymbol() {
+	public String getSymbol() {
 		return SymbolGenerator.getSymbol(); 
 	}
+
+	public void updateProfit(float newValue) {
+		Platform.runLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				float f = Ledger.round(newValue, 1);
+				
+				profitLabel.setText(String.valueOf(f));
+			}
+		});
+	}
+
+	public void updateBalance(float balance) {
+		Platform.runLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				balanceLabel.setText(String.valueOf(balance));
+			}
+			
+		});
+	}
+
 }

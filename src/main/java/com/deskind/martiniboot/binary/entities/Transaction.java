@@ -6,6 +6,7 @@ public class Transaction {
 	private float amount;
 	private String id;
 	private String symbol;
+	private long contract_id;
 	
 	public float getBalance() {
 		return balance;
@@ -21,6 +22,12 @@ public class Transaction {
 	}
 	public float getAmount() {
 		return amount;
+	}
+	public long getContract_id() {
+		return contract_id;
+	}
+	public void setContract_id(long contract_id) {
+		this.contract_id = contract_id;
 	}
 	public void setAmount(float amount) {
 		this.amount = amount;

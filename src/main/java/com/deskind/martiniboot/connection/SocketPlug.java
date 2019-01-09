@@ -3,6 +3,8 @@ package com.deskind.martiniboot.connection;
 import java.io.IOException;
 import java.net.URI;
 
+import javax.websocket.CloseReason;
+import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.ContainerProvider;
 import javax.websocket.DeploymentException;
 import javax.websocket.Session;
@@ -22,7 +24,7 @@ public class SocketPlug {
 	/**
 	 * Connecting to server
 	 */
-	public void connect() {
+	public SocketPlug connect() {
 		try {
 			session = ContainerProvider.getWebSocketContainer().
 					connectToServer(ApplicationEndpoint.class, 
@@ -32,23 +34,28 @@ public class SocketPlug {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		return this;
 	}
 
 	/**
 	 * Authorize with token
 	 * @param token
 	 */
-	public void authorize(String token) {
+	public SocketPlug authorize(String token) {
 		String authorize = String.format("{\"authorize\": \"%s\"}", token);
 		
-		if(this.connected()) {
-			try {
-				session.getBasicRemote().sendText(authorize);
-			} catch (IOException e) {
-				System.out.println("+++Cant authorize+++");
-				e.printStackTrace();
-			}
+		sendMessage(authorize);
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
+		
+		System.out.println("+++ Authorized");
+		
+		return this;
 	}
 
 	public boolean connected() {
@@ -60,8 +67,27 @@ public class SocketPlug {
 			try {
 				session.getBasicRemote().sendText(message);
 			} catch (IOException e) {
+				System.out.println("+++ Failed to send message : " + message);
+			}
+	}
+
+	public void disconnect() {
+		if(connected()) {
+			try {
+				session.close(new CloseReason(CloseCodes.CLOSED_ABNORMALLY, "Closed for test"));
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+
+	public SocketPlug subscribe() {
+		
+		sendMessage("{\"transaction\": 1, \"subscribe\": 1}");
+		
+		System.out.println("+++ Subscribed");
+		
+		return this;
 	}
 
 }

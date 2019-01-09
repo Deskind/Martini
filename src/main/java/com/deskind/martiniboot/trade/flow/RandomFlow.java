@@ -1,7 +1,10 @@
 package com.deskind.martiniboot.trade.flow;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.stereotype.Controller;
 
 import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.analysys.Analyst;
@@ -37,19 +40,80 @@ public class RandomFlow implements Flow{
 	
 	@Override
 	public void makeLuckyBet(TransactionUpdate update) {
+		
+		MainController controller = MartiniBootApplication.getMainController();
+		BuyParameters parameters = null;
+		BuyRequest request = null;
+		long duration = controller.getDuration();
+		String symbol = controller.getSymbol();
+		
 		if(update == null) {
-			BuyParameters parameters = new BuyParameters(luckyGuy.getLot(),
-					analyst.makeDescision(),
-					MartiniBootApplication.getMainController().getDuration(),
-					MainController.getSymbol());
-			BuyRequest buyRequest = new BuyRequest(parameters);
 			
-			MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(buyRequest));
+			parameters = new BuyParameters(luckyGuy.getLot(),
+											analyst.makeDescision(),
+											duration,
+											symbol);
+			
+			request = new BuyRequest(parameters);
+			
+		}else {
+				Transaction transaction = update.getTransaction();
+				float amount = transaction.getAmount();
+				float balance = transaction.getBalance();
+				float stake = 0;
+				
+				if(amount > 0.1) {
+					stake = winCase(amount, controller, balance);
+				}else {
+					stake = looseCase(amount, controller, balance);
+				}
+				
+				String type = analyst.makeDescision();
+				
+				parameters = new BuyParameters(stake,
+												type,
+												duration,
+												symbol);
+
+				request = new BuyRequest(parameters);
+				
 		}
+		
+		MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(request));
+		
+		String message = String.format("Contract %.1f %s %s\n", parameters.getAmount(),
+															parameters.getContractType(),
+															parameters.getSymbol());
+		
+		controller.writeMessage(message, false, false);
 		
 	}
 	
-
+	private float winCase(float amount, MainController controller, float balance) {
+		float stake = 0;
+		
+		ledger.countersWinUpdate();
+		
+		ledger.updateWinProfit(amount, controller, balance);
+		
+		stake = ledger.calculateNextStake(luckyGuy);
+		
+		
+		return stake;
+	}
+	
+	private float looseCase(float amount, MainController controller, float balance) {
+		float stake = 0;
+		
+		ledger.countersLooseUpdate();
+		
+		ledger.updateLooseProfit(amount, controller, balance);
+		
+		stake = ledger.calculateNextStake(luckyGuy);
+		
+		return stake;
+	}
+	
 	public LuckyGuy getLuckyGuy() {
 		return luckyGuy;
 	}
@@ -58,6 +122,7 @@ public class RandomFlow implements Flow{
 		this.luckyGuy = luckyGuy;
 	}
 
+	@Override
 	public Ledger getLedger() {
 		return ledger;
 	}
@@ -80,36 +145,6 @@ public class RandomFlow implements Flow{
 
 	public void setStashes(List<Stash> stashes) {
 		this.stashes = stashes;
-	}
-
-	@Override
-	public void take(TransactionUpdate update) {
-		MainController controller = MartiniBootApplication.getMainController();
-		Transaction transaction = update.getTransaction();
-		String action = transaction.getAction();
-		
-		
-		if(action.equals("sell")) {
-			float amount = update.getTransaction().getAmount();
-			
-			if(amount > 0.1) {
-				winCase();
-			}else {
-				looseCase();
-			}
-				
-		}
-		
-	}
-
-	private void looseCase() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	private void winCase() {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

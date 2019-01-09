@@ -113,11 +113,12 @@
          </font>
       </Label>
       <Label layoutX="19.0" layoutY="93.0" prefHeight="17.0" prefWidth="121.0" text="Min 0.8$" textFill="#06651f" />
-      <Button layoutX="427.0" layoutY="487.0" mnemonicParsing="false" text="ReqToStopTrading" />
+      <Button layoutX="25.0" layoutY="407.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="131.0" text="Stop Request" />
       <Label layoutX="592.0" layoutY="491.0" text="Time to wait" />
       <TextField fx:id="waitTimeInput" layoutX="664.0" layoutY="487.0" prefHeight="25.0" prefWidth="100.0" text="3" />
       <Label layoutX="782.0" layoutY="491.0" text="Martini factor" />
       <TextField fx:id="martiniFactorInput" layoutX="866.0" layoutY="487.0" prefHeight="25.0" prefWidth="47.0" text="0.8" />
       <CheckBox fx:id="randomCheck" layoutX="22.0" layoutY="251.0" mnemonicParsing="false" selected="true" text="RandomMode" />
+      <Button layoutX="25.0" layoutY="443.0" mnemonicParsing="false" onAction="#closeSocket" prefHeight="25.0" prefWidth="131.0" text="Close socket" />
     </children>
 </AnchorPane>
