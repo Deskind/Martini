@@ -5,15 +5,20 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.prefs.Preferences;
 
+import javax.websocket.CloseReason;
+import javax.websocket.CloseReason.CloseCodes;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.deskind.martiniboot.connection.SocketPlug;
+import com.deskind.martiniboot.controllers.MainController;
 import com.deskind.martiniboot.entities.LuckyGuy;
-import com.deskind.martiniboot.fxcontrollers.MainController;
 import com.deskind.martiniboot.runnables.AliveTask;
 import com.deskind.martiniboot.trade.flow.Flow;
-import com.deskind.martiniboot.trade.flow.RandomFlow;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -28,6 +33,7 @@ public class MartiniBootApplication extends Application{
 	private static final String MAIN_FXML_LOCATION = "/fxml/main.fxml";
 	private static final String STYLE_LOCATION = "/styles/style.css";
 	private static final String COMMON_LOSS_KEY = "commonLossLastValue";
+	private static final String SERVER_SHUTDOWN_REQUEST = "http://localhost:8880/actuator/shutdown";
 	
 	private static MainController mainController;
 	private static LuckyGuy luckyGuy;
@@ -39,6 +45,8 @@ public class MartiniBootApplication extends Application{
 	private static Preferences preferences;
 	
 	private static Flow flow;
+	
+	private static boolean random;
 
 	public static void main(String[] args) {
 		
@@ -95,8 +103,16 @@ public class MartiniBootApplication extends Application{
 		//cancel stay alive timer
 		stayAlive.cancel();
 		
+		MartiniBootApplication.socketPlug.
+								disconnect(new CloseReason(CloseCodes.NORMAL_CLOSURE, "!!!Bye!!!"));
+		
 		//msg
 		System.out.println("Application stopped ... ");
+		
+		//web server shutdown
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpPost post = new HttpPost(SERVER_SHUTDOWN_REQUEST);
+		client.execute(post);	
 	}
 	
 	public float getCommonLossLastValue() {
@@ -136,6 +152,14 @@ public class MartiniBootApplication extends Application{
 
 	public static Flow getFlow() {
 		return flow;
+	}
+
+	public static void setRandomMode(boolean random) {
+		MartiniBootApplication.random = random;
+	}
+
+	public static boolean isRandomMode() {
+		return random;
 	}
 
 }

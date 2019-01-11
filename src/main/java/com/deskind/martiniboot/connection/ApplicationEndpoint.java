@@ -17,9 +17,10 @@ import com.deskind.martiniboot.binary.entities.MessageType;
 import com.deskind.martiniboot.binary.entities.Transaction;
 import com.deskind.martiniboot.binary.responses.BuyResponse;
 import com.deskind.martiniboot.binary.responses.TransactionUpdate;
-import com.deskind.martiniboot.fxcontrollers.MainController;
+import com.deskind.martiniboot.controllers.MainController;
 import com.deskind.martiniboot.trade.Ledger;
 import com.deskind.martiniboot.trade.flow.Flow;
+import com.deskind.martiniboot.trade.flow.RandomFlow;
 import com.google.gson.Gson;
 
 @ClientEndpoint
@@ -29,12 +30,11 @@ public class ApplicationEndpoint {
 	
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
-		MartiniBootApplication.getMainController().writeMessage("CONNECTED", false, true);
+		MartiniBootApplication.getMainController().writeMessage("CONNECTED\n", false, true);
 	}
 	
 	@OnMessage
 	public void onMessage(String message) {
-//		System.out.println("...Server message : " + message);
 		
 		//in case of reconnection flow reference will be null
 		if(flow == null) {
@@ -67,7 +67,6 @@ public class ApplicationEndpoint {
 	}
 	
 	private void processTransaction(String message, Gson gson) {
-		System.out.println(message);
 		
 		TransactionUpdate update = gson.fromJson(message, TransactionUpdate.class);
 		Transaction transaction = update.getTransaction();
@@ -89,12 +88,12 @@ public class ApplicationEndpoint {
     	}
     	
     	if(ledger.getCurrentContractId() == id && action.equals("sell"))
-    		flow.makeLuckyBet(update);
+    			flow.makeLuckyBet(update);
     	
 	}
 
 	private void processBuy(String message, Gson gson) {
-		System.out.println(message);
+
 	}
 
 	private void processAuthorize(String message, Gson gson) {
@@ -109,14 +108,18 @@ public class ApplicationEndpoint {
 
 	@OnClose
 	public void onClose(CloseReason reason) {
-		MartiniBootApplication.getMainController().writeMessage("DISCONNECTED", true, true);
+		MartiniBootApplication.getMainController().writeMessage("DISCONNECTED\n", true, true);
 		
-		System.out.println("...Close reason " + reason.getReasonPhrase());
+		String reasonPhrase = reason.getReasonPhrase();
 		
-		SocketPlug plug = MartiniBootApplication.getSocketPlug();
-		plug.connect().
-				authorize(MartiniBootApplication.getLuckyGuy().getToken()).
-				subscribe();
+		System.out.println("...Close reason " + reasonPhrase);
+		
+		if(!reasonPhrase.equals("!!!Bye!!!")) {
+			SocketPlug plug = MartiniBootApplication.getSocketPlug();
+			plug.connect().
+					authorize(MartiniBootApplication.getLuckyGuy().getToken()).
+					subscribe();
+		}
 	}
 	
 	//setters

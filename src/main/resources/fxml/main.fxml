@@ -19,7 +19,7 @@
 <?import javafx.scene.text.TextFlow?>
 <?import com.deskind.martiniboot.customtextfields.*?>
 
-<AnchorPane id="AnchorPane" prefHeight="535.0" prefWidth="1233.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.deskind.martiniboot.fxcontrollers.MainController">
+<AnchorPane id="AnchorPane" prefHeight="535.0" prefWidth="1233.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.deskind.martiniboot.controllers.MainController">
     <children>
         <Label fx:id="label" layoutX="91.0" layoutY="38.0" minHeight="16" minWidth="69" />
       <Label layoutX="1079.0" layoutY="16.0" text="MARTINI" textFill="#1a1ac3">
@@ -33,7 +33,7 @@
          </font>
       </Label>
       <Label layoutX="17.0" layoutY="22.0" text="Token" />
-      <TextField fx:id="tokenInput" layoutX="17.0" layoutY="43.0" prefHeight="25.0" prefWidth="160.0" text="rHSEixzyT0AVQIz" />
+      <TextField fx:id="tokenInput" layoutX="17.0" layoutY="43.0" prefHeight="25.0" prefWidth="160.0" text="8FPFzZ5nhsbNck3" />
       <Label layoutX="111.0" layoutY="483.0" text="Balance:" textFill="#052d75">
          <font>
             <Font size="21.0" />
@@ -48,7 +48,7 @@
             <Font size="15.0" />
          </font>
       </Label>
-      <Button layoutX="26.0" layoutY="371.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="131.0" text="STOP_TRADING" />
+      <Button layoutX="26.0" layoutY="371.0" mnemonicParsing="false" onAction="#stop" prefHeight="25.0" prefWidth="131.0" text="STOP_TRADING" />
       <Accordion layoutX="205.0" layoutY="68.0" prefHeight="400.0" prefWidth="1012.0">
         <panes>
           <TitledPane animated="false" text="Common Loss">
@@ -71,7 +71,7 @@
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="530.0" prefWidth="1039.0">
                      <children>
-                        <ScrollPane fx:id="scroll" layoutX="29.6" layoutY="29.6" prefHeight="324.0" prefWidth="1001.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="18.0" AnchorPane.topAnchor="20.0">
+                        <ScrollPane fx:id="textMessagesScroll" layoutX="29.6" layoutY="29.6" prefHeight="324.0" prefWidth="1001.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="18.0" AnchorPane.topAnchor="20.0">
                           <content>
                               <TextFlow fx:id="tradeMessages" prefHeight="301.0" prefWidth="951.0" style="-fx-border-color: blue;" />
                           </content>
@@ -107,18 +107,11 @@
             <Font size="18.0" />
          </font>
       </Label>
-      <Label layoutX="205.0" layoutY="28.0" prefHeight="27.0" prefWidth="48.0" text="Note:" textFill="#a9abc9" underline="true">
-         <font>
-            <Font size="18.0" />
-         </font>
-      </Label>
       <Label layoutX="19.0" layoutY="93.0" prefHeight="17.0" prefWidth="121.0" text="Min 0.8$" textFill="#06651f" />
-      <Button layoutX="25.0" layoutY="407.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="131.0" text="Stop Request" />
-      <Label layoutX="592.0" layoutY="491.0" text="Time to wait" />
-      <TextField fx:id="waitTimeInput" layoutX="664.0" layoutY="487.0" prefHeight="25.0" prefWidth="100.0" text="3" />
-      <Label layoutX="782.0" layoutY="491.0" text="Martini factor" />
-      <TextField fx:id="martiniFactorInput" layoutX="866.0" layoutY="487.0" prefHeight="25.0" prefWidth="47.0" text="0.8" />
-      <CheckBox fx:id="randomCheck" layoutX="22.0" layoutY="251.0" mnemonicParsing="false" selected="true" text="RandomMode" />
-      <Button layoutX="25.0" layoutY="443.0" mnemonicParsing="false" onAction="#closeSocket" prefHeight="25.0" prefWidth="131.0" text="Close socket" />
+      <Button layoutX="25.0" layoutY="407.0" mnemonicParsing="false" onAction="#stopRequest" prefHeight="25.0" prefWidth="131.0" text="Stop Request" />
+      <Label layoutX="22.0" layoutY="247.0" text="Martini factor" />
+      <TextField fx:id="martiniFactorInput" layoutX="102.0" layoutY="243.0" prefHeight="25.0" prefWidth="47.0" text="0.8" />
+      <CheckBox fx:id="randomCheck" layoutX="33.0" layoutY="283.0" mnemonicParsing="false" text="RandomMode" />
+      <Button disable="true" layoutX="25.0" layoutY="443.0" mnemonicParsing="false" onAction="#closeSocket" prefHeight="25.0" prefWidth="131.0" text="Close socket" />
     </children>
 </AnchorPane>

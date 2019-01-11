@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.deskind.martiniboot.controllers.MainController;
 import com.deskind.martiniboot.entities.LuckyGuy;
-import com.deskind.martiniboot.fxcontrollers.MainController;
 
 import javafx.scene.chart.XYChart;
 
@@ -25,6 +25,10 @@ public class Ledger {
 	
 	private long currentContractId;
 	
+	public Ledger(float martiniFactor) {
+		this.martiniFactor = martiniFactor;
+	}
+
 	//INSTANCE METHODS
 	public void countersWinUpdate() {
 		allContractsCounter++;

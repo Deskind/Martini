@@ -1,32 +1,36 @@
-package com.deskind.martiniboot.fxcontrollers;
+package com.deskind.martiniboot.controllers;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.ResourceBundle;
 
+import javax.websocket.CloseReason;
+import javax.websocket.CloseReason.CloseCodes;
+
 import com.deskind.martiniboot.MartiniBootApplication;
+import com.deskind.martiniboot.analysys.Analyst;
 import com.deskind.martiniboot.analysys.DoubleCallPutAnalyst;
 import com.deskind.martiniboot.binary.entities.Authorize;
 import com.deskind.martiniboot.connection.SocketPlug;
-import com.deskind.martiniboot.entities.Account;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.managers.UserInputManager;
 import com.deskind.martiniboot.trade.Ledger;
-import com.deskind.martiniboot.trade.Stash;
 import com.deskind.martiniboot.trade.SymbolGenerator;
 import com.deskind.martiniboot.trade.flow.Flow;
 import com.deskind.martiniboot.trade.flow.RandomFlow;
 
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -40,8 +44,6 @@ public class MainController implements Initializable{
 	public MainController() {
 		MartiniBootApplication.setMainController(this);
 	}
-	
-	private UserInputManager userInputManager;
 	
 	@FXML
 	private TextField tokenInput, lotInput, expirationInput, stopLossInput, waitTimeInput, martiniFactorInput;
@@ -58,25 +60,49 @@ public class MainController implements Initializable{
 	@FXML
 	private Label virRealLabel, balanceLabel, profitLabel;
 	
+	@FXML
+	private ScrollPane textMessagesScroll;
+	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		lossSeries = new XYChart.Series<Number, Number>();
 		lossChart.getData().add(lossSeries);
+		
+		//this block needed to prevent text bluring in scroll layout
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                tradeMessages.setCache(false);
+                ObservableList<Node> elements = textMessagesScroll.getChildrenUnmodifiable();
+                for(Node n : elements){
+                    n.setCache(false);
+                }
+                
+            }
+        });
+	}
+	
+	@FXML
+	public void stop(ActionEvent event) {
+		MartiniBootApplication.getSocketPlug().
+					disconnect(new CloseReason(CloseCodes.NORMAL_CLOSURE, "!!!Bye!!!"));
 	}
 	
 	@FXML
 	public void closeSocket(ActionEvent event) {
-		MartiniBootApplication.getSocketPlug().disconnect();
+		MartiniBootApplication.getSocketPlug().
+		disconnect(new CloseReason(CloseCodes.CLOSED_ABNORMALLY, "!!!Closed Abnormally!!!"));
+	}
+	
+	@FXML
+	public void stopRequest(ActionEvent event) {
+		MartiniBootApplication.getFlow().setStopRequest(true);
 	}
 	
     @FXML
     public void start(ActionEvent event) throws InterruptedException {
     	
-    	SocketPlug plug = MartiniBootApplication.getSocketPlug();
-    	LuckyGuy luckyGuy = null;
-    	Flow flow = null;
-    	
-    	userInputManager = new UserInputManager(tokenInput,
+    	UserInputManager userInputManager = new UserInputManager(tokenInput,
 											    			lotInput,
 											    			expirationInput,
 											    			stopLossInput,
@@ -87,30 +113,28 @@ public class MainController implements Initializable{
     	boolean valid = userInputManager.validate();
         
     	if(valid) {
-    		luckyGuy = new LuckyGuy(tokenInput.getText(),
+    		SocketPlug plug = MartiniBootApplication.getSocketPlug();
+    		
+    		Ledger ledger = new Ledger(Float.parseFloat(martiniFactorInput.getText()));
+    		
+    		Analyst analyst = new DoubleCallPutAnalyst();
+    		
+    		LuckyGuy luckyGuy = new LuckyGuy(tokenInput.getText(),
 											Float.parseFloat(lotInput.getText()));
     		
-    		luckyGuy.setAccount(new Account());
+    		Flow flow = new RandomFlow(luckyGuy, ledger, analyst, null);
     		
     		MartiniBootApplication.setLuckyGuy(luckyGuy);
-    		
-    		//random mode
-    		if(randomCheck.isSelected()) { 
-    			flow = new RandomFlow(luckyGuy,
-    					new Ledger(),
-    					new DoubleCallPutAnalyst(),
-    					new ArrayList<Stash>());
-    			
-    			float factor = Float.parseFloat(martiniFactorInput.getText());
-    			
-    			flow.getLedger().setMartiniFactor(factor);
-    			
-    			MartiniBootApplication.setFlow(flow);
-    		}
+    		MartiniBootApplication.setFlow(flow);
     		
     		plug.authorize(luckyGuy.getToken()).subscribe();
     		
-    		flow.makeLuckyBet(null);
+    		//random mode
+    		if(randomCheck.isSelected()) { 
+    			MartiniBootApplication.setRandomMode(true);
+    			flow.makeLuckyBet(null);
+    		}
+    		
     	}
     }
     

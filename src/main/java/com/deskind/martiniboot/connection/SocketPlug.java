@@ -48,7 +48,7 @@ public class SocketPlug {
 		sendMessage(authorize);
 		
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(2000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -71,10 +71,10 @@ public class SocketPlug {
 			}
 	}
 
-	public void disconnect() {
+	public void disconnect(CloseReason reason) {
 		if(connected()) {
 			try {
-				session.close(new CloseReason(CloseCodes.CLOSED_ABNORMALLY, "Closed for test"));
+				session.close(reason);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
