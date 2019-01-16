@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.controllers.MainController;
 import com.deskind.martiniboot.entities.LuckyGuy;
 
@@ -23,10 +24,11 @@ public class Ledger {
 	
 	private List<Character> results = new ArrayList<Character>();
 	
-	private long currentContractId;
+	private String currentContractId;
 	
-	public Ledger(float martiniFactor) {
+	public Ledger(float martiniFactor, float stopLoss) {
 		this.martiniFactor = martiniFactor;
+		this.stopLoss = stopLoss;
 	}
 
 	//INSTANCE METHODS
@@ -67,13 +69,16 @@ public class Ledger {
 			loss = 0;
 		}else if(oneRowWins == 1 && allContractsCounter == 1){
 			loss = 0;
-		}else if(beforeLast == '-' && last == '+'){
+		}else if(beforeLast == '-' && last == '+' && loss != 0){
 			loss -= pureProfit;
+		}else if(beforeLast == '-' && last == '+' && loss == 0){
+			loss = 0;
 		}
+		
 		
 		controller.updateProfit(profit);
 		controller.updateBalance(balance);
-		int pointNumber = allContractsCounter - 1;
+		int pointNumber = allContractsCounter;
 		controller.addLossPoint(new XYChart.Data<>(pointNumber, loss));
 		controller.writeMessage("Result " + round(pureProfit, 1) + "\n", false, false);
 	}
@@ -86,12 +91,31 @@ public class Ledger {
 		
 		controller.updateProfit(profit);
 		controller.updateBalance(balance);
-		int pointNumber = allContractsCounter - 1;
+		int pointNumber = allContractsCounter;
 		controller.addLossPoint(new XYChart.Data<>(pointNumber, loss));
 		controller.writeMessage("Result " + round(currentStake, 1) + "\n", true, false);
 	}
 	
+	/*
+	 * 1. Checking stop loss
+	 * 2. Process characters in results
+	 * 3. Return stake size
+	 */
 	public float calculateNextStake(LuckyGuy luckyGuy) {
+		
+		if(stopLossCheck()) {
+			//reset counters
+			loss = 0;
+			oneRowWins = 0;
+			oneRowLooses = 0;
+			
+			MartiniBootApplication.getMainController().writeMessage("STOP LOSS\n", true, false);
+			
+			MartiniBootApplication.getMainController().addLossPoint(new XYChart.Data<Number, Number>(allContractsCounter, 0));
+			
+			return luckyGuy.getLot();
+		}
+		
 		float stake = 0f;
 		
 		int size = results.size();
@@ -112,11 +136,17 @@ public class Ledger {
 			stake = loss / 2 / martiniFactor;
 		}
 		
-		System.out.println("...Stake " + stake);
-		
 		return round(stake, 1);
 	}
 	
+	private boolean stopLossCheck() {
+		
+		if(loss > stopLoss)
+			return true;
+		
+		return false;
+	}
+
 	/**
 	 * rounding stake value
 	 * @param number
@@ -187,11 +217,11 @@ public class Ledger {
 				+ oneRowLooses + ", allContractsCounter=" + allContractsCounter + "]";
 	}
 
-	public void setCurrentContractId(Long id) {
+	public void setCurrentContractId(String id) {
 		currentContractId = id;
 	}
 
-	public long getCurrentContractId() {
+	public String getCurrentContractId() {
 		return currentContractId;
 	}
 

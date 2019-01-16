@@ -48,7 +48,7 @@ public class SocketPlug {
 		sendMessage(authorize);
 		
 		try {
-			Thread.sleep(2000);
+			Thread.sleep(1500);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -84,6 +84,12 @@ public class SocketPlug {
 	public SocketPlug subscribe() {
 		
 		sendMessage("{\"transaction\": 1, \"subscribe\": 1}");
+		
+		try {
+			Thread.sleep(1500);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		
 		System.out.println("+++ Subscribed");
 		

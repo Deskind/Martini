@@ -29,6 +29,6 @@ public class DoubleCallPutAnalyst implements Analyst{
 
     @Override
     public String getName() {
-        return "DoubleCallPutAnalyst";
+        return "Double Call/Put Strategy";
     }
 }

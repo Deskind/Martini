@@ -6,14 +6,15 @@ public class BuyParameters {
 	private String contract_type;
 	private String currency = "USD";
 	private long duration;
-	private String duration_unit = "s";
+	private String duration_unit;
 	private String symbol;
 	
-	public BuyParameters(float amount, String contractType, long duration, String symbol) {
+	public BuyParameters(float amount, String contractType, long duration, String durationUnit, String symbol) {
 		super();
 		this.amount = amount;
 		this.contract_type = contractType;
 		this.duration = duration;
+		this.duration_unit = durationUnit;
 		this.symbol = symbol;
 	}
 

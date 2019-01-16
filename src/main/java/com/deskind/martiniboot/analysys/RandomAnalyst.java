@@ -29,7 +29,7 @@ public class RandomAnalyst implements Analyst{
     
     @Override
     public String getName() {
-        return "RandomAnalyst";
+        return "RandomStrategy";
     }
     
 }

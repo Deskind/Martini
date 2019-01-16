@@ -4,13 +4,20 @@ import com.deskind.martiniboot.binary.entities.BuyParameters;
 
 public class BuyRequest {
 	private int buy = 1;
-	private int price = 2000;
+	private int price = 10000;
+	
+	private PassthroughBuyRequest passthrough;
 	
 	private BuyParameters parameters;
 
 	public BuyRequest(BuyParameters parameters) {
 		super();
 		this.parameters = parameters;
+	}
+
+	public BuyRequest(BuyParameters parameters, PassthroughBuyRequest passthrough) {
+		this.parameters = parameters;
+		this.passthrough = passthrough;
 	}
 
 	public int getBuy() {

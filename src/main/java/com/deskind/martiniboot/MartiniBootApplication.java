@@ -19,6 +19,7 @@ import com.deskind.martiniboot.controllers.MainController;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.runnables.AliveTask;
 import com.deskind.martiniboot.trade.flow.Flow;
+import com.deskind.martiniboot.trade.flow.RandomFlow;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -38,14 +39,14 @@ public class MartiniBootApplication extends Application{
 	private static MainController mainController;
 	private static LuckyGuy luckyGuy;
 	private static SocketPlug socketPlug;
+	private static RandomFlow flow;
 	
 	private static Timer stayAlive = new Timer();
 	private static TimerTask aliveTask;
 	
 	private static Preferences preferences;
 	
-	private static Flow flow;
-	
+	//random mode flag
 	private static boolean random;
 
 	public static void main(String[] args) {
@@ -146,11 +147,11 @@ public class MartiniBootApplication extends Application{
 		return mainController;
 	}
 
-	public static void setFlow(Flow flow) {
+	public static void setFlow(RandomFlow flow) {
 		MartiniBootApplication.flow = flow;
 	}
 
-	public static Flow getFlow() {
+	public static RandomFlow getFlow() {
 		return flow;
 	}
 

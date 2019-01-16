@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
 import javax.websocket.OnClose;
+import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
@@ -26,11 +27,19 @@ import com.google.gson.Gson;
 @ClientEndpoint
 public class ApplicationEndpoint {
 	
-	private Flow flow;
+	private MainController controller;
 	
+	private RandomFlow flow;
+	
+	private String transactionStreamId = null;
+	
+	public ApplicationEndpoint() {
+		 controller = MartiniBootApplication.getMainController();
+	}
+
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
-		MartiniBootApplication.getMainController().writeMessage("CONNECTED\n", false, true);
+		controller.writeMessage("CONNECTED\n", false, true);
 	}
 	
 	@OnMessage
@@ -40,6 +49,10 @@ public class ApplicationEndpoint {
 		if(flow == null) {
 			setFlow(MartiniBootApplication.getFlow());
 		}
+		
+		//print error messages
+		if(message.contains("error"))
+			System.out.println("...Error message is :" + message);
 		
 		Gson gson = new Gson();
 		String type = gson.fromJson(message, MessageType.class).getMessage_type();
@@ -54,7 +67,7 @@ public class ApplicationEndpoint {
             }
             
             case "buy": {
-            	processBuy(message, gson);
+            	processBuy(gson, message);
             	return;
             }
             
@@ -66,49 +79,81 @@ public class ApplicationEndpoint {
     	}
 	}
 	
+	private void processBuy(Gson gson, String message) {
+		BuyResponse buyResponse = gson.fromJson(message, BuyResponse.class);
+		
+		String buyId = buyResponse.getPassthrough().getBuyContractsUniqueId();
+		
+		if(buyId.equals(transactionStreamId)) {
+			Ledger ledger = flow.getLedger();
+			Buy buy = buyResponse.getBuy();
+		
+			ledger.setCurrentContractId(buy.getContract_id());
+			ledger.setCurrentStake(buy.getBuy_price());
+		}
+			
+	}
+
+	/**
+	 * Responsible for:
+	 * 1.transactionStreamId
+	 * 2.sell or buy action
+	 * @param message
+	 * @param gson
+	 */
 	private void processTransaction(String message, Gson gson) {
 		
 		TransactionUpdate update = gson.fromJson(message, TransactionUpdate.class);
 		Transaction transaction = update.getTransaction();
-		Ledger ledger = flow.getLedger();
 		
-		long id = update.getTransaction().getContract_id();
-    	String action = transaction.getAction();
-    	
-    	if(action == null) 
+		
+		String id = transaction.getId();
+		String action = transaction.getAction();
+		
+		
+		//remember stream id
+		if(action == null && transactionStreamId == null) { 
+			transactionStreamId = id;
+			flow.setBuyContractsId(id);
+			
     		return;
+		}
+		
     	
-    	if(action.equals("buy")) {
-    		ledger.setCurrentContractId(id);
-    		
-    		float amount = Math.abs(transaction.getAmount());
-    		ledger.setCurrentStake(amount);
-    		
-    		return;
-    	}
-    	
-    	if(ledger.getCurrentContractId() == id && action.equals("sell"))
+    	if(transactionStreamId.equals(id) && action.equals("sell"))
     			flow.makeLuckyBet(update);
-    	
 	}
 
-	private void processBuy(String message, Gson gson) {
-
-	}
-
+	/**
+	 * Responsible for:
+	 * 1. Setting balance label
+	 * 2. For printing "AUTHORIZED" message to logs
+	 * @param message
+	 * @param gson
+	 */
 	private void processAuthorize(String message, Gson gson) {
 		
 		Authorization authorization = gson.fromJson(message, Authorization.class);
 		Authorize authorize = authorization.getAuthorize();
 		
-		MainController controller = MartiniBootApplication.getMainController();
 		controller.setBalance(authorize);
-		controller.writeMessage("AUTHORIZED", false, true);
+		controller.writeMessage("AUTHORIZED\n", false, true);
 	}
-
+	
+	/*
+	 * Responsible for:
+	 * 1. Reset transactionStreamId to null
+	 * 2. Write log message
+	 * 3. Read reason phrase and:
+	 * 3.1 Close connection
+	 * 3.2 Reconnect
+	 */
 	@OnClose
 	public void onClose(CloseReason reason) {
-		MartiniBootApplication.getMainController().writeMessage("DISCONNECTED\n", true, true);
+		
+		transactionStreamId = null;
+		
+		controller.writeMessage("DISCONNECTED WITH CLOSE EVENT\n", true, true);
 		
 		String reasonPhrase = reason.getReasonPhrase();
 		
@@ -122,8 +167,22 @@ public class ApplicationEndpoint {
 		}
 	}
 	
+	@OnError
+	public void onError(Throwable throwable) {
+		transactionStreamId = null;
+		
+		controller.writeMessage("DISCONNECTED WITH ERROR\n", true, true);
+		
+		//reconnect process
+		SocketPlug plug = MartiniBootApplication.getSocketPlug();
+		plug.connect().
+				authorize(MartiniBootApplication.getLuckyGuy().getToken()).
+				subscribe();
+		
+	}
+	
 	//setters
-	private void setFlow(Flow flow) {
+	private void setFlow(RandomFlow flow) {
 		this.flow = flow;
 	}
 }

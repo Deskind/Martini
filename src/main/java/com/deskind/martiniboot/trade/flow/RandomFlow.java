@@ -1,19 +1,13 @@
 package com.deskind.martiniboot.trade.flow;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-
-import javax.websocket.CloseReason;
-import javax.websocket.CloseReason.CloseCodes;
-
-import org.springframework.stereotype.Controller;
 
 import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.analysys.Analyst;
 import com.deskind.martiniboot.binary.entities.BuyParameters;
 import com.deskind.martiniboot.binary.entities.Transaction;
 import com.deskind.martiniboot.binary.requests.BuyRequest;
+import com.deskind.martiniboot.binary.requests.PassthroughBuyRequest;
 import com.deskind.martiniboot.binary.responses.TransactionUpdate;
 import com.deskind.martiniboot.controllers.MainController;
 import com.deskind.martiniboot.entities.LuckyGuy;
@@ -38,6 +32,7 @@ public class RandomFlow implements Flow{
 	
 	private boolean stopRequest;
 	private boolean suspended;
+	private String  buyContractsId = null;
 	
 	public RandomFlow(LuckyGuy luckyGuy, Ledger ledger, Analyst strategy, List<Stash> stashes) {
 		super();
@@ -66,9 +61,10 @@ public class RandomFlow implements Flow{
 			parameters = new BuyParameters(luckyGuy.getLot(),
 											analyst.makeDescision(),
 											duration,
+											MartiniBootApplication.getMainController().getTimeUnits().toString(),
 											symbol);
 			
-			request = new BuyRequest(parameters);
+			request = new BuyRequest(parameters, new PassthroughBuyRequest(getBuyContractsId()));
 			
 		}else {
 				Transaction transaction = update.getTransaction();
@@ -83,6 +79,7 @@ public class RandomFlow implements Flow{
 					if(stopRequest && getLedger().getOneRowWins() >= 2) {
 						setSuspended(true);
 						System.out.println("+++ Trading process suspended +++");
+						controller.writeMessage("TRADING PROCESS STOPPED BY REQUEST", false, true);
 					}
 					
 				}else {
@@ -94,16 +91,17 @@ public class RandomFlow implements Flow{
 				parameters = new BuyParameters(stake,
 												type,
 												duration,
+												MartiniBootApplication.getMainController().getTimeUnits().toString(),
 												symbol);
 
-				request = new BuyRequest(parameters);
+				request = new BuyRequest(parameters, new PassthroughBuyRequest(getBuyContractsId()));
 				
 		}
 		
 		if(MartiniBootApplication.isRandomMode() && !isSuspended()) {
 			
 			MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(request));
-			String message = String.format("Contract %.1f %s", parameters.getAmount(),
+			String message = String.format("Contract %.1f %s %s", parameters.getAmount(),
 																	parameters.getSymbol(),
 																	parameters.getContractType());
 			controller.writeMessage(message, false, false);
@@ -128,11 +126,13 @@ public class RandomFlow implements Flow{
 			parameters = new BuyParameters(luckyGuy.getLot(),
 											signal.getType(),
 											signal.getDuration(),
+											signal.getDurationUnit(),
 											signal.getSymbol());
 		}else {
 			parameters = new BuyParameters(nextSignalStake,
 											signal.getType(),
 											signal.getDuration(),
+											signal.getDurationUnit(),
 											signal.getSymbol());
 		}
 		
@@ -143,40 +143,41 @@ public class RandomFlow implements Flow{
 		//reset next signal stake
 		nextSignalStake = 0;
 		
-		BuyRequest request = new BuyRequest(parameters);
+		BuyRequest request = new BuyRequest(parameters, new PassthroughBuyRequest(getBuyContractsId()));
 		
 		MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(request));
 		
 		String message = String.format("Contract %.1f %s %s", parameters.getAmount(),
 																parameters.getSymbol(),
 																parameters.getContractType());
+		
 		MartiniBootApplication.getMainController().writeMessage(message, false, false);
 	}
 	
 	private float winCase(float amount, MainController controller, float balance) {
-		float stake = 0;
-		
 		ledger.countersWinUpdate();
 		
 		ledger.updateWinProfit(amount, controller, balance);
 		
-		stake = ledger.calculateNextStake(luckyGuy);
+		float stake = ledger.calculateNextStake(luckyGuy);
 		
 		
 		return stake;
 	}
 	
 	private float looseCase(float amount, MainController controller, float balance) {
-		float stake = 0;
-		
 		ledger.countersLooseUpdate();
 		
 		ledger.updateLooseProfit(amount, controller, balance);
 		
-		stake = ledger.calculateNextStake(luckyGuy);
+		float stake = ledger.calculateNextStake(luckyGuy);
 		
 		return stake;
 	}
+	
+	
+	
+	//GETTERS AND SETTERS
 	
 	public LuckyGuy getLuckyGuy() {
 		return luckyGuy;
@@ -232,7 +233,14 @@ public class RandomFlow implements Flow{
 	public void setSuspended(boolean suspended) {
 		this.suspended = suspended;
 	}
+
 	
+	public void setBuyContractsId(String id) {
+		buyContractsId = id;
+	}
 	
+	public String getBuyContractsId() {
+		return buyContractsId;
+	}
 
 }
