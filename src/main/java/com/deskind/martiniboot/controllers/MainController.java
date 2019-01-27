@@ -170,7 +170,7 @@ public class MainController implements Initializable{
     		LuckyGuy luckyGuy = new LuckyGuy(tokenInput.getText(),
 											Float.parseFloat(lotInput.getText()));
     		
-    		RandomFlow flow = new RandomFlow(luckyGuy, ledger, analyst, null);
+    		RandomFlow flow = new RandomFlow(luckyGuy, ledger, analyst, this);
     		
     		//set time units
     		setTimeUnits(timeUnitChoice.getValue());
@@ -242,7 +242,7 @@ public class MainController implements Initializable{
                 date.getStyleClass().add("date-text");
                 
                 //create and decorate message itself
-                Text messageText = new Text(message);
+                Text messageText = new Text(message + "\n");
                 
                 //red color if error
                 if(makeRed){

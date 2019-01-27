@@ -33,7 +33,8 @@
          </font>
       </Label>
       <Label layoutX="17.0" layoutY="22.0" text="Token" />
-      <TextField fx:id="tokenInput" layoutX="17.0" layoutY="43.0" prefHeight="25.0" prefWidth="160.0" text="JSMmYougKlsYHxc" />
+      <!-- TextField fx:id="tokenInput" layoutX="17.0" layoutY="43.0" prefHeight="25.0" prefWidth="160.0" text="JSMmYougKlsYHxc" /> -->
+      <TextField fx:id="tokenInput" layoutX="17.0" layoutY="43.0" prefHeight="25.0" prefWidth="160.0" text="rHSEixzyT0AVQIz" />
       <Label layoutX="111.0" layoutY="499.0" text="Balance:" textFill="#052d75">
          <font>
             <Font size="21.0" />

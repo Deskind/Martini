@@ -19,7 +19,7 @@ public class AliveTask extends TimerTask {
 		if(plug.connected()) {
 			plug.sendMessage(PING_MESSAGE);
 		}else {
-			System.out.println("...Enable to send ping message because of closed session ...");
+//			System.out.println("...Enable to send ping message because of closed session ...");
 		}
 	}
 

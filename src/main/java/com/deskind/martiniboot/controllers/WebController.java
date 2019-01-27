@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.trade.Signal;
 import com.deskind.martiniboot.trade.flow.Flow;
+import com.deskind.martiniboot.trade.flow.RandomFlow;
 
 @RestController
 @RequestMapping("/martini")
@@ -22,12 +23,12 @@ public class WebController {
 						@RequestParam("duration_unit") String durationUnit) {
 		
 		MainController controller = MartiniBootApplication.getMainController();
-		Flow flow = MartiniBootApplication.getFlow();
+		RandomFlow flow = MartiniBootApplication.getFlow();
 		
 		Signal signal = new Signal(symbol, type, duration, durationUnit);
 		
 		if(flow == null) {
-			controller.writeMessage("+++ Trading process not started", true, true);
+			controller.writeMessage("SIGNAL WAS NOT PROCESSED BECAUSE TRADING PROCESS NOT STARTED", true, true);
 			return;
 		}
 		

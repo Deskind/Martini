@@ -26,12 +26,9 @@ import com.google.gson.Gson;
 
 @ClientEndpoint
 public class ApplicationEndpoint {
-	
 	private MainController controller;
 	
 	private RandomFlow flow;
-	
-	private String transactionStreamId = null;
 	
 	public ApplicationEndpoint() {
 		 controller = MartiniBootApplication.getMainController();
@@ -39,7 +36,7 @@ public class ApplicationEndpoint {
 
 	@OnOpen
 	public void onOpen(Session session) throws IOException {
-		controller.writeMessage("CONNECTED\n", false, true);
+		controller.writeMessage("CONNECTED", false, true);
 	}
 	
 	@OnMessage
@@ -49,7 +46,7 @@ public class ApplicationEndpoint {
 		if(flow == null) {
 			setFlow(MartiniBootApplication.getFlow());
 		}
-		
+
 		//print error messages
 		if(message.contains("error"))
 			System.out.println("...Error message is :" + message);
@@ -82,15 +79,9 @@ public class ApplicationEndpoint {
 	private void processBuy(Gson gson, String message) {
 		BuyResponse buyResponse = gson.fromJson(message, BuyResponse.class);
 		
-		String buyId = buyResponse.getPassthrough().getBuyContractsUniqueId();
-		
-		if(buyId.equals(transactionStreamId)) {
-			Ledger ledger = flow.getLedger();
-			Buy buy = buyResponse.getBuy();
-		
-			ledger.setCurrentContractId(buy.getContract_id());
-			ledger.setCurrentStake(buy.getBuy_price());
-		}
+		//every next contract
+		flow.setCurrentContractId(buyResponse.getBuy().getContract_id());
+		flow.getLedger().setCurrentStake(buyResponse.getBuy().getBuy_price());
 			
 	}
 
@@ -103,25 +94,15 @@ public class ApplicationEndpoint {
 	 */
 	private void processTransaction(String message, Gson gson) {
 		
-		TransactionUpdate update = gson.fromJson(message, TransactionUpdate.class);
-		Transaction transaction = update.getTransaction();
+		//transaction from transaction update
+		Transaction transaction = gson.fromJson(message, TransactionUpdate.class).getTransaction();
 		
+		if(transaction.getAction() == null)
+			return;
 		
-		String id = transaction.getId();
-		String action = transaction.getAction();
-		
-		
-		//remember stream id
-		if(action == null && transactionStreamId == null) { 
-			transactionStreamId = id;
-			flow.setBuyContractsId(id);
-			
-    		return;
-		}
-		
-    	
-    	if(transactionStreamId.equals(id) && action.equals("sell"))
-    			flow.makeLuckyBet(update);
+    	if(flow.getCurrentContractId() == transaction.getContract_id() && transaction.getAction().equals("sell")) {
+    		flow.makeLuckyBet(transaction);
+    	}
 	}
 
 	/**
@@ -136,8 +117,13 @@ public class ApplicationEndpoint {
 		Authorization authorization = gson.fromJson(message, Authorization.class);
 		Authorize authorize = authorization.getAuthorize();
 		
+		if(authorization.getError() != null) {
+			controller.writeMessage(authorization.getError().toString(), true, true);
+			return;
+		}
+		
 		controller.setBalance(authorize);
-		controller.writeMessage("AUTHORIZED\n", false, true);
+		controller.writeMessage("AUTHORIZED", false, true);
 	}
 	
 	/*
@@ -151,15 +137,12 @@ public class ApplicationEndpoint {
 	@OnClose
 	public void onClose(CloseReason reason) {
 		
-		transactionStreamId = null;
+		String message = String.format("DISCONNECTED. Reason: %s. Phrase: %s", reason.getCloseCode().toString(), reason.getReasonPhrase());
 		
-		controller.writeMessage("DISCONNECTED WITH CLOSE EVENT\n", true, true);
-		
-		String reasonPhrase = reason.getReasonPhrase();
-		
-		System.out.println("...Close reason " + reasonPhrase);
-		
-		if(!reasonPhrase.equals("!!!Bye!!!")) {
+		if(reason.getReasonPhrase().equals("!!!Bye!!!")) {
+			controller.writeMessage(message, true, true);
+		}else {
+			controller.writeMessage(message, true, true);
 			SocketPlug plug = MartiniBootApplication.getSocketPlug();
 			plug.connect().
 					authorize(MartiniBootApplication.getLuckyGuy().getToken()).
@@ -169,9 +152,10 @@ public class ApplicationEndpoint {
 	
 	@OnError
 	public void onError(Throwable throwable) {
-		transactionStreamId = null;
 		
-		controller.writeMessage("DISCONNECTED WITH ERROR\n", true, true);
+		System.out.println(throwable.getMessage());
+		
+		controller.writeMessage("CONNECTION ERROR", true, true);
 		
 		//reconnect process
 		SocketPlug plug = MartiniBootApplication.getSocketPlug();

@@ -16,6 +16,7 @@ public class Ledger {
 	private float loss;
 	private float stopLoss;
 	private float martiniFactor;
+	
 	private int oneRowWins;
 	private int oneRowLooses;
 	private int allContractsCounter;
@@ -32,22 +33,26 @@ public class Ledger {
 	}
 
 	//INSTANCE METHODS
-	public void countersWinUpdate() {
-		allContractsCounter++;
-		oneRowLooses = 0;
-		oneRowWins++;
-		wins++;
-		
-		results.add('+');
+	
+	public void updateCounters(float amount) {
+		if(amount > 0) {
+			wins++;
+		}else {
+			looses++;
+		}
 	}
 	
-	public void countersLooseUpdate() {
-		allContractsCounter++;
-		oneRowWins = 0;
-		oneRowLooses++;
-		looses++;
-		
-		results.add('-');
+	public void resetCounters() {
+		wins = 0;
+		looses = 0;
+	}
+	
+	public void updateProfit(float amount) {
+		if(amount > 0) {
+			profit += amount - currentStake;
+		}else {
+			profit -= amount;
+		}
 	}
 	
 	public void updateWinProfit(float amount, MainController controller, float balance) {
@@ -80,7 +85,7 @@ public class Ledger {
 		controller.updateBalance(balance);
 		int pointNumber = allContractsCounter;
 		controller.addLossPoint(new XYChart.Data<>(pointNumber, loss));
-		controller.writeMessage("Result " + round(pureProfit, 1) + "\n", false, false);
+		controller.writeMessage("Result " + round(pureProfit, 1), false, false);
 	}
 
 	public void updateLooseProfit(float amount, MainController controller, float balance) {
@@ -93,7 +98,7 @@ public class Ledger {
 		controller.updateBalance(balance);
 		int pointNumber = allContractsCounter;
 		controller.addLossPoint(new XYChart.Data<>(pointNumber, loss));
-		controller.writeMessage("Result " + round(currentStake, 1) + "\n", true, false);
+		controller.writeMessage("Result " + round(currentStake, 1), true, false);
 	}
 	
 	/*
@@ -109,7 +114,7 @@ public class Ledger {
 			oneRowWins = 0;
 			oneRowLooses = 0;
 			
-			MartiniBootApplication.getMainController().writeMessage("STOP LOSS\n", true, false);
+			MartiniBootApplication.getMainController().writeMessage("STOP LOSS", true, false);
 			
 			MartiniBootApplication.getMainController().addLossPoint(new XYChart.Data<Number, Number>(allContractsCounter, 0));
 			
@@ -225,4 +230,27 @@ public class Ledger {
 		return currentContractId;
 	}
 
+	public int getWins() {
+		return wins;
+	}
+
+	public void setWins(int wins) {
+		this.wins = wins;
+	}
+
+	public int getLooses() {
+		return looses;
+	}
+
+	public void setLooses(int looses) {
+		this.looses = looses;
+	}
+
+	public void resetLoss() {
+		loss = 0;
+	}
+
+	
+
+	
  }

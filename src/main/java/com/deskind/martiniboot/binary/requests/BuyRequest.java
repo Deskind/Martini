@@ -15,11 +15,6 @@ public class BuyRequest {
 		this.parameters = parameters;
 	}
 
-	public BuyRequest(BuyParameters parameters, PassthroughBuyRequest passthrough) {
-		this.parameters = parameters;
-		this.passthrough = passthrough;
-	}
-
 	public int getBuy() {
 		return buy;
 	}

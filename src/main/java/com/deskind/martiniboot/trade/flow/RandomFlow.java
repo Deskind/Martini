@@ -1,20 +1,17 @@
 package com.deskind.martiniboot.trade.flow;
 
-import java.util.List;
-
 import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.analysys.Analyst;
 import com.deskind.martiniboot.binary.entities.BuyParameters;
 import com.deskind.martiniboot.binary.entities.Transaction;
 import com.deskind.martiniboot.binary.requests.BuyRequest;
-import com.deskind.martiniboot.binary.requests.PassthroughBuyRequest;
-import com.deskind.martiniboot.binary.responses.TransactionUpdate;
 import com.deskind.martiniboot.controllers.MainController;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.trade.Ledger;
 import com.deskind.martiniboot.trade.Signal;
-import com.deskind.martiniboot.trade.Stash;
 import com.google.gson.Gson;
+
+import javafx.scene.chart.XYChart;
 
 
 /**
@@ -22,88 +19,138 @@ import com.google.gson.Gson;
  * @author deski
  *
  */
-public class RandomFlow implements Flow{
+public class RandomFlow{
 	private LuckyGuy luckyGuy;
 	private Ledger ledger;
 	private Analyst analyst;
-	private List<Stash> stashes;
+	private MainController controller;
 	
 	private float nextSignalStake;
 	
 	private boolean stopRequest;
 	private boolean suspended;
-	private String  buyContractsId = null;
+	private long  currentContractId;
 	
-	public RandomFlow(LuckyGuy luckyGuy, Ledger ledger, Analyst strategy, List<Stash> stashes) {
+	public RandomFlow(LuckyGuy luckyGuy, Ledger ledger, Analyst strategy, MainController controller) {
 		super();
 		this.luckyGuy = luckyGuy;
 		this.ledger = ledger;
 		this.analyst = strategy;
-		this.stashes = stashes;
+		this.controller = controller;
 	}
 	
-	@Override
-	public void makeLuckyBet(TransactionUpdate update) {
+	
+	public void makeLuckyBet(Transaction transaction) {
 		
+		//trading process suspended by user request
 		if(isSuspended())
 			return;
 		
-		MainController controller = MartiniBootApplication.getMainController();
-		BuyParameters parameters = null;
-		BuyRequest request = null;
-		long duration = controller.getDuration();
-		String symbol = controller.getSymbol();
+		BuyRequest buyRequest = null;
+		BuyParameters buyRequestParameters = null;
 		
 		float stake = 0;
 		
-		if(update == null) {
+		//first stake
+		if(transaction == null) {
 			
-			parameters = new BuyParameters(luckyGuy.getLot(),
+			buyRequestParameters = new BuyParameters(luckyGuy.getLot(),
 											analyst.makeDescision(),
-											duration,
-											MartiniBootApplication.getMainController().getTimeUnits().toString(),
-											symbol);
+											controller.getDuration(),
+											controller.getTimeUnits().toString(),
+											controller.getSymbol());
 			
-			request = new BuyRequest(parameters, new PassthroughBuyRequest(getBuyContractsId()));
+			buyRequest = new BuyRequest(buyRequestParameters);
 			
+		//every next stake
 		}else {
-				Transaction transaction = update.getTransaction();
 				float amount = transaction.getAmount();
 				float balance = transaction.getBalance();
 				
-				if(amount > 0.1) {
+				//write result message
+				if(amount > 0) {
+					float f = ledger.round((amount - ledger.getCurrentStake()), 1);
+					controller.writeMessage("Result: " + f, false, false);
+				}else {
+					float f = ledger.round(ledger.getCurrentStake(), 1);
+					controller.writeMessage("Result: -" + f, true, false);
+				}
+				
+				//update balance label
+				controller.updateBalance(balance);
+				
+				ledger.updateCounters(amount);
+				
+				//win case
+				if(amount > 0) {
 					
-					stake = winCase(amount, controller, balance);
+					//calculate profit
+					float stakeProfit = amount - ledger.getCurrentStake();
+					ledger.setProfit(ledger.getProfit() + stakeProfit);
 					
 					//check stop request
-					if(stopRequest && getLedger().getOneRowWins() >= 2) {
-						setSuspended(true);
-						System.out.println("+++ Trading process suspended +++");
+					if(stopRequest && getLedger().getWins() >= 2) {
+						suspended = true;
 						controller.writeMessage("TRADING PROCESS STOPPED BY REQUEST", false, true);
 					}
 					
+					if(ledger.getLoss() != 0) {
+						ledger.setLoss(ledger.getLoss() - stakeProfit);
+					}
+					
+					if(ledger.getWins() >= 2) {
+						ledger.resetCounters();
+						ledger.resetLoss();
+						stake = luckyGuy.getLot();
+					}else if(ledger.getWins() == 1 && ledger.getLooses() != 0) {
+						stake = ledger.getCurrentStake();
+					}else if(ledger.getWins() == 1 && ledger.getLooses() == 0) {
+						stake = luckyGuy.getLot();
+					}else {
+						stake = ledger.getLoss() / 2 / ledger.getMartiniFactor();
+					}
+					
+				//loose case	
 				}else {
-					stake = looseCase(amount, controller, balance);
+					//calculate profit 
+					ledger.setProfit(ledger.getProfit() - ledger.getCurrentStake());
+					
+					//reset wins
+					ledger.setWins(0);
+					
+					//update common loss
+					ledger.setLoss(ledger.getLoss() + ledger.getCurrentStake());
+					
+					//calculate new stake
+					stake = ledger.getLoss() / 2 / ledger.getMartiniFactor();
 				}
 				
-				String type = analyst.makeDescision();
-				
-				parameters = new BuyParameters(stake,
-												type,
-												duration,
-												MartiniBootApplication.getMainController().getTimeUnits().toString(),
-												symbol);
+				buyRequestParameters = new BuyParameters(ledger.round(stake, 1),
+												analyst.makeDescision(),
+												controller.getDuration(),
+												controller.getTimeUnits().toString(),
+												controller.getSymbol());
 
-				request = new BuyRequest(parameters, new PassthroughBuyRequest(getBuyContractsId()));
+				buyRequest = new BuyRequest(buyRequestParameters);
 				
 		}
 		
+		//update profit label
+		controller.updateProfit(ledger.getProfit());
+		
+		//add point to chart
+		controller.addLossPoint(new XYChart.Data<Number, Number>(ledger.getAllContractsCounter(), ledger.getLoss()));
+		
 		if(MartiniBootApplication.isRandomMode() && !isSuspended()) {
 			
-			MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(request));
-			String message = String.format("Contract %.1f %s %s", parameters.getAmount(),
-																	parameters.getSymbol(),
-																	parameters.getContractType());
+			MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(buyRequest));
+			
+			//all stakes counter
+			ledger.setAllContractsCounter(ledger.getAllContractsCounter() + 1);
+			
+			String message = String.format("Contract %.1f %s %s", buyRequestParameters.getAmount(),
+																	buyRequestParameters.getSymbol(),
+																	buyRequestParameters.getContractType());
 			controller.writeMessage(message, false, false);
 		}else {
 			if(nextSignalStake == 0)
@@ -112,7 +159,6 @@ public class RandomFlow implements Flow{
 		
 	}
 	
-	@Override
 	public void makeSignalBet(Signal signal) {
 		
 		if(isSuspended())
@@ -143,7 +189,7 @@ public class RandomFlow implements Flow{
 		//reset next signal stake
 		nextSignalStake = 0;
 		
-		BuyRequest request = new BuyRequest(parameters, new PassthroughBuyRequest(getBuyContractsId()));
+		BuyRequest request = new BuyRequest(parameters);
 		
 		MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(request));
 		
@@ -153,29 +199,6 @@ public class RandomFlow implements Flow{
 		
 		MartiniBootApplication.getMainController().writeMessage(message, false, false);
 	}
-	
-	private float winCase(float amount, MainController controller, float balance) {
-		ledger.countersWinUpdate();
-		
-		ledger.updateWinProfit(amount, controller, balance);
-		
-		float stake = ledger.calculateNextStake(luckyGuy);
-		
-		
-		return stake;
-	}
-	
-	private float looseCase(float amount, MainController controller, float balance) {
-		ledger.countersLooseUpdate();
-		
-		ledger.updateLooseProfit(amount, controller, balance);
-		
-		float stake = ledger.calculateNextStake(luckyGuy);
-		
-		return stake;
-	}
-	
-	
 	
 	//GETTERS AND SETTERS
 	
@@ -187,7 +210,6 @@ public class RandomFlow implements Flow{
 		this.luckyGuy = luckyGuy;
 	}
 
-	@Override
 	public Ledger getLedger() {
 		return ledger;
 	}
@@ -204,24 +226,10 @@ public class RandomFlow implements Flow{
 		this.analyst = strategy;
 	}
 
-	public List<Stash> getStashes() {
-		return stashes;
-	}
-
-	public void setStashes(List<Stash> stashes) {
-		this.stashes = stashes;
-	}
-
-	public boolean isStopRequest() {
-		return stopRequest;
-	}
-	
-	@Override
 	public void setStopRequest(boolean stopRequest) {
 		this.stopRequest = stopRequest;
 	}
 
-	@Override
 	public void setTransaction(Transaction transaction) {
 		
 	}
@@ -234,13 +242,13 @@ public class RandomFlow implements Flow{
 		this.suspended = suspended;
 	}
 
-	
-	public void setBuyContractsId(String id) {
-		buyContractsId = id;
-	}
-	
-	public String getBuyContractsId() {
-		return buyContractsId;
+	public long getCurrentContractId() {
+		return currentContractId;
 	}
 
+	public void setCurrentContractId(long currentContractId) {
+		this.currentContractId = currentContractId;
+	}
+
+	
 }

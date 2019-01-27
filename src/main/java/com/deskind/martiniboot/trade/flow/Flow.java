@@ -6,7 +6,7 @@ import com.deskind.martiniboot.trade.Ledger;
 import com.deskind.martiniboot.trade.Signal;
 
 public interface Flow {
-	void makeLuckyBet(TransactionUpdate update);
+	void makeLuckyBet(Transaction transaction);
 	void makeSignalBet(Signal signal);
 	Ledger getLedger();
 	void setTransaction(Transaction transaction);

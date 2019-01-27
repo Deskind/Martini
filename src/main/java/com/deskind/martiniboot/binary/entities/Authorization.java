@@ -7,6 +7,8 @@ package com.deskind.martiniboot.binary.entities;
  */
 public class Authorization {
 	private Authorize authorize;
+	
+	private Error error;
 
 	public Authorization(Authorize authorize) {
 		super();
@@ -21,10 +23,13 @@ public class Authorization {
 		this.authorize = authorize;
 	}
 
-	@Override
-	public String toString() {
-		return "Authorization [authorize=" + authorize + "]";
+	public Error getError() {
+		return error;
 	}
-	
+
+	public void setError(Error error) {
+		this.error = error;
+	}
+
 	
 }

@@ -3,7 +3,7 @@ package com.deskind.martiniboot.binary.entities;
 public class Buy {
 	private String balance_after;
 	private float buy_price;
-	private String contract_id;
+	private long contract_id;
 	private String longcode;
 	private float payout;
 	private long purchase_time;
@@ -11,7 +11,7 @@ public class Buy {
 	private long start_time;
 	private String transaction_id;
 	
-	public Buy(String balance_after, float buy_price, String contract_id, String longcode, float payout,
+	public Buy(String balance_after, float buy_price, long contract_id, String longcode, float payout,
 			long purchase_time, String shortcode, long start_time, String transaction_id) {
 		super();
 		this.balance_after = balance_after;
@@ -41,11 +41,11 @@ public class Buy {
 		this.buy_price = buy_price;
 	}
 
-	public String getContract_id() {
+	public long getContract_id() {
 		return contract_id;
 	}
 
-	public void setContract_id(String contract_id) {
+	public void setContract_id(long contract_id) {
 		this.contract_id = contract_id;
 	}
 
