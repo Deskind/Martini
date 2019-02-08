@@ -8,16 +8,14 @@ import javafx.scene.control.TextField;
  *
  */
 public class UserInputManager {
-	private TextField token, lot, expiration, stopLoss, waitTime, martiniFactor;
+	private TextField token, lot, expiration, stopLoss, martiniFactor;
 
-	public UserInputManager(TextField token, TextField lot, TextField expiration, TextField stopLoss,
-			TextField waitTime, TextField martiniFactor) {
+	public UserInputManager(TextField token, TextField lot, TextField expiration, TextField stopLoss, TextField martiniFactor) {
 		super();
 		this.token = token;
 		this.lot = lot;
 		this.expiration = expiration;
 		this.stopLoss = stopLoss;
-		this.waitTime = waitTime;
 		this.martiniFactor = martiniFactor;
 	}
 

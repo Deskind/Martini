@@ -42,7 +42,7 @@ public class RandomFlow{
 	
 	public void makeLuckyBet(Transaction transaction) {
 		
-		//trading process suspended by user request
+		//Suspended state check
 		if(isSuspended())
 			return;
 		
@@ -62,7 +62,7 @@ public class RandomFlow{
 			
 			buyRequest = new BuyRequest(buyRequestParameters);
 			
-		//every next stake
+		//Every state after 'sell' transaction
 		}else {
 				float amount = transaction.getAmount();
 				float balance = transaction.getBalance();
@@ -77,7 +77,7 @@ public class RandomFlow{
 				}
 				
 				//update balance label
-				controller.updateBalance(balance);
+				controller.updateView(null, balance, null);
 				
 				ledger.updateCounters(amount);
 				
@@ -107,7 +107,7 @@ public class RandomFlow{
 					}else if(ledger.getWins() == 1 && ledger.getLooses() == 0) {
 						stake = luckyGuy.getLot();
 					}else {
-						stake = ledger.getLoss() / 2 / ledger.getMartiniFactor();
+						stake = ledger.getLoss() / 2 / controller.getFactor();
 					}
 					
 				//loose case	
@@ -135,68 +135,65 @@ public class RandomFlow{
 				
 		}
 		
-		//update profit label
-		controller.updateProfit(ledger.getProfit());
+		//updating view
+		controller.updateView(new XYChart.Data<Number, Number>(ledger.getAllTimeContracts(), ledger.getLoss()),
+								null,
+								ledger.getProfit());
 		
-		//add point to chart
-		controller.addLossPoint(new XYChart.Data<Number, Number>(ledger.getAllContractsCounter(), ledger.getLoss()));
-		
+		//App in random mode and not suspended
 		if(MartiniBootApplication.isRandomMode() && !isSuspended()) {
 			
 			MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(buyRequest));
 			
 			//all stakes counter
-			ledger.setAllContractsCounter(ledger.getAllContractsCounter() + 1);
+			ledger.setAllTimeContracts(ledger.getAllTimeContracts() + 1);
 			
 			String message = String.format("Contract %.1f %s %s", buyRequestParameters.getAmount(),
 																	buyRequestParameters.getSymbol(),
 																	buyRequestParameters.getContractType());
 			controller.writeMessage(message, false, false);
+		
+		//If app in 'Signal' mode simply save next stake amount
 		}else {
-			if(nextSignalStake == 0)
-				nextSignalStake = stake;
+			nextSignalStake = ledger.round(stake, 1);
 		}
 		
 	}
 	
 	public void makeSignalBet(Signal signal) {
+		float stake = 0;
 		
 		if(isSuspended())
 			return;
 		
-		BuyParameters parameters = null;
-		int counter = this.getLedger().getAllContractsCounter();
+		//if stake in process don't process other signals
+		if(nextSignalStake == 0 && getLedger().getAllTimeContracts() > 1)
+			return;
 		
 		//first stake
-		if(counter == 0) {
-			parameters = new BuyParameters(luckyGuy.getLot(),
-											signal.getType(),
-											signal.getDuration(),
-											signal.getDurationUnit(),
-											signal.getSymbol());
-		}else {
-			parameters = new BuyParameters(nextSignalStake,
-											signal.getType(),
-											signal.getDuration(),
-											signal.getDurationUnit(),
-											signal.getSymbol());
+		if(getLedger().getAllTimeContracts() == 0) {
+			stake = luckyGuy.getLot();
+		}else {//every next stake
+			stake = nextSignalStake;
 		}
-		
-		//if stake in process don't process other signals
-		if(nextSignalStake == 0 && counter > 1)
-			return;
 		
 		//reset next signal stake
 		nextSignalStake = 0;
 		
-		BuyRequest request = new BuyRequest(parameters);
-		
+		//request
+		BuyRequest request = new BuyRequest(new BuyParameters(stake,
+																signal.getType(),
+																signal.getDuration(),
+																signal.getDurationUnit(),
+																signal.getSymbol()));
+		//sending to server
 		MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(request));
 		
-		String message = String.format("Contract %.1f %s %s", parameters.getAmount(),
-																parameters.getSymbol(),
-																parameters.getContractType());
-		
+		//user message
+		String message = String.format("Contract %.1f %s %s", request.getParameters().getAmount(),
+																request.getParameters().getSymbol(),
+																request.getParameters().getContractType());
+		//user logging
 		MartiniBootApplication.getMainController().writeMessage(message, false, false);
 	}
 	

@@ -44,7 +44,7 @@ public class ApplicationEndpoint {
 		
 		//in case of reconnection flow reference will be null
 		if(flow == null) {
-			setFlow(MartiniBootApplication.getFlow());
+			flow = MartiniBootApplication.getFlow();
 		}
 
 		//print error messages
@@ -57,9 +57,7 @@ public class ApplicationEndpoint {
     	switch (type) {
             case "authorize": {
             	flow = MartiniBootApplication.getFlow();
-            	
             	processAuthorize(message, gson);
-            	
                 return;
             }
             
@@ -79,39 +77,38 @@ public class ApplicationEndpoint {
 	private void processBuy(Gson gson, String message) {
 		BuyResponse buyResponse = gson.fromJson(message, BuyResponse.class);
 		
-		//every next contract
+		//remember contract id
 		flow.setCurrentContractId(buyResponse.getBuy().getContract_id());
+		
+		//remember stake value
 		flow.getLedger().setCurrentStake(buyResponse.getBuy().getBuy_price());
 			
 	}
-
+	
 	/**
-	 * Responsible for:
-	 * 1.transactionStreamId
-	 * 2.sell or buy action
+	 * Transactions can be 'buy' or 'sell' type
 	 * @param message
 	 * @param gson
 	 */
 	private void processTransaction(String message, Gson gson) {
 		
-		//transaction from transaction update
+		//transaction details
 		Transaction transaction = gson.fromJson(message, TransactionUpdate.class).getTransaction();
 		
 		if(transaction.getAction() == null)
 			return;
 		
+		/*
+		 * Check id
+		 * Interested in 'sell' type
+		 */
     	if(flow.getCurrentContractId() == transaction.getContract_id() && transaction.getAction().equals("sell")) {
+    		
+    		//after 'sell' it is time to make new bet
     		flow.makeLuckyBet(transaction);
     	}
 	}
 
-	/**
-	 * Responsible for:
-	 * 1. Setting balance label
-	 * 2. For printing "AUTHORIZED" message to logs
-	 * @param message
-	 * @param gson
-	 */
 	private void processAuthorize(String message, Gson gson) {
 		
 		Authorization authorization = gson.fromJson(message, Authorization.class);
@@ -122,27 +119,32 @@ public class ApplicationEndpoint {
 			return;
 		}
 		
-		controller.setBalance(authorize);
+		//update balance
+		controller.updateView(null, null, Float.parseFloat(authorize.getBalance()));
+		
+		//message to user
 		controller.writeMessage("AUTHORIZED", false, true);
 	}
 	
-	/*
-	 * Responsible for:
-	 * 1. Reset transactionStreamId to null
-	 * 2. Write log message
-	 * 3. Read reason phrase and:
-	 * 3.1 Close connection
-	 * 3.2 Reconnect
-	 */
+	
 	@OnClose
 	public void onClose(CloseReason reason) {
 		
-		String message = String.format("DISCONNECTED. Reason: %s. Phrase: %s", reason.getCloseCode().toString(), reason.getReasonPhrase());
+		String closeMessage = String.format("DISCONNECTED. Reason: %s. Phrase: %s", 
+																reason.getCloseCode().toString(), 
+																reason.getReasonPhrase());
 		
+		//if user itself closed connection
 		if(reason.getReasonPhrase().equals("!!!Bye!!!")) {
-			controller.writeMessage(message, true, true);
+			controller.writeMessage(closeMessage, true, true);
+		
+		//if trading platform closed connection
 		}else {
-			controller.writeMessage(message, true, true);
+			//messages to user
+			controller.writeMessage(closeMessage, true, true);
+			controller.writeMessage("Atemp to restart", true, true);
+			
+			//asking a socket for reconnect
 			SocketPlug plug = MartiniBootApplication.getSocketPlug();
 			plug.connect().
 					authorize(MartiniBootApplication.getLuckyGuy().getToken()).
@@ -153,8 +155,10 @@ public class ApplicationEndpoint {
 	@OnError
 	public void onError(Throwable throwable) {
 		
+		//console message
 		System.out.println(throwable.getMessage());
 		
+		//message to user
 		controller.writeMessage("CONNECTION ERROR", true, true);
 		
 		//reconnect process
@@ -163,10 +167,5 @@ public class ApplicationEndpoint {
 				authorize(MartiniBootApplication.getLuckyGuy().getToken()).
 				subscribe();
 		
-	}
-	
-	//setters
-	private void setFlow(RandomFlow flow) {
-		this.flow = flow;
 	}
 }

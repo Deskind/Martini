@@ -41,21 +41,36 @@ import javafx.scene.text.TextFlow;
 
 public class MainController implements Initializable{
 	
+	/*
+	 * For log messages
+	 */
 	private SimpleDateFormat dateFormatter = new SimpleDateFormat("(yyyy-MM-dd HH:mm:ss)");
+	
+	/*
+	 * Available strategies
+	 */
 	private final String RANDOM_STRATEGY = "Random";
 	private final String SINGLE_CALL_PUT_STRATEGY = "Single call/put";
 	private final String DOUBLE_CALL_PUT_STRATEGY = "Double call/put";
 	
+	/*
+	 * Time unit for making stake
+	 */
 	private TimeUnits timeUnits;
 	
+	
+	/*
+	 * Loss chart data
+	 */
 	private XYChart.Series<Number, Number> lossSeries;
+	
 	
 	public MainController() {
 		MartiniBootApplication.setMainController(this);
 	}
 	
 	@FXML
-	private TextField tokenInput, lotInput, expirationInput, stopLossInput, waitTimeInput, martiniFactorInput;
+	private TextField tokenInput, lotInput, expirationInput, stopLossInput, martiniFactorInput;
 	
 	@FXML 
 	private TextFlow tradeMessages, logMessages;
@@ -74,44 +89,6 @@ public class MainController implements Initializable{
 	
 	@FXML
 	private ChoiceBox<String> strategyChoice, timeUnitChoice;
-	
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
-		
-		//set up choices for strategies
-		strategyChoice.getItems().addAll(DOUBLE_CALL_PUT_STRATEGY,
-											SINGLE_CALL_PUT_STRATEGY,
-											RANDOM_STRATEGY);
-		
-		//first value is default
-		strategyChoice.getSelectionModel().selectFirst();
-		
-		//set up time units
-		for(TimeUnits unit : TimeUnits.values()) {
-			timeUnitChoice.getItems().add(unit.toString());
-		}
-		
-		//first value
-		timeUnitChoice.getSelectionModel().selectFirst();
-		
-		
-		
-		lossSeries = new XYChart.Series<Number, Number>();
-		lossChart.getData().add(lossSeries);
-		
-		//this block needed to prevent text bluring in scroll layout
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                tradeMessages.setCache(false);
-                ObservableList<Node> elements = textMessagesScroll.getChildrenUnmodifiable();
-                for(Node n : elements){
-                    n.setCache(false);
-                }
-                
-            }
-        });
-	}
 	
 	@FXML
 	public void stop(ActionEvent event) {
@@ -147,23 +124,20 @@ public class MainController implements Initializable{
     @FXML
     public void start(ActionEvent event) throws InterruptedException {
     	
+    	//input validation
     	UserInputManager userInputManager = new UserInputManager(tokenInput,
 											    			lotInput,
 											    			expirationInput,
 											    			stopLossInput,
-											    			waitTimeInput,
 											    			martiniFactorInput);
     	
     	//always returns true (need implementation)
     	boolean valid = userInputManager.validate();
         
+    	//after validation passed
     	if(valid) {
-    		SocketPlug plug = MartiniBootApplication.getSocketPlug();
-    		
-    		float factor = Float.parseFloat(martiniFactorInput.getText());
-    		float stopLoss = Float.parseFloat(stopLossInput.getText());
-    		
-    		Ledger ledger = new Ledger(factor, stopLoss);
+    		Ledger ledger = new Ledger(getFactor(),
+    									getStopLoss());
     		
     		Analyst analyst = getAnalyst(strategyChoice.getValue());
     		
@@ -172,30 +146,71 @@ public class MainController implements Initializable{
     		
     		RandomFlow flow = new RandomFlow(luckyGuy, ledger, analyst, this);
     		
-    		//set time units
-    		setTimeUnits(timeUnitChoice.getValue());
-    		
     		MartiniBootApplication.setLuckyGuy(luckyGuy);
     		MartiniBootApplication.setFlow(flow);
     		
+    		//set time units
+    		setTimeUnits(timeUnitChoice.getValue());
+    		
+    		//get socket and authorize
+    		SocketPlug plug = MartiniBootApplication.getSocketPlug();
     		plug.authorize(luckyGuy.getToken()).subscribe();
     		
     		//random mode
     		if(randomCheck.isSelected()) { 
     			
     			if(analyst != null)
-    				writeMessage("You choose = >" + analyst.getName(), false, true);
+    				writeMessage("STRATEGY = >" + analyst.getName(), false, true);
     			else
     				writeMessage("Impossible to set strategy", false, true);
     			
     			MartiniBootApplication.setRandomMode(true);
+    			
+    			//null argument because of first stake
     			flow.makeLuckyBet(null);
     		}
     		
     	}
     }
     
-    private Analyst getAnalyst(String name) {
+    @Override
+	public void initialize(URL location, ResourceBundle resources) {
+		
+		//set up choices for strategies
+		strategyChoice.getItems().addAll(DOUBLE_CALL_PUT_STRATEGY,
+											SINGLE_CALL_PUT_STRATEGY,
+											RANDOM_STRATEGY);
+		
+		//first value is default
+		strategyChoice.getSelectionModel().selectFirst();
+		
+		//set up time units
+		for(TimeUnits unit : TimeUnits.values()) {
+			timeUnitChoice.getItems().add(unit.toString());
+		}
+		
+		//first value
+		timeUnitChoice.getSelectionModel().selectFirst();
+		
+		
+		lossSeries = new XYChart.Series<Number, Number>();
+		lossChart.getData().add(lossSeries);
+		
+		//this block needed to prevent text bluring in scroll layout
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                tradeMessages.setCache(false);
+                ObservableList<Node> elements = textMessagesScroll.getChildrenUnmodifiable();
+                for(Node n : elements){
+                    n.setCache(false);
+                }
+                
+            }
+        });
+	}
+    
+	private Analyst getAnalyst(String name) {
     	
     	if(name.equals(RANDOM_STRATEGY))
     		return new RandomAnalyst();
@@ -208,27 +223,6 @@ public class MainController implements Initializable{
     	
 	}
 
-	/**
-     * Account real or virtual
-     * @param label
-     */
-	public void setBalance(Authorize authorize) {
-		Platform.runLater(new Runnable() {
-			@Override
-            public void run() {
-            	String label = "REAL";
-            	
-            	if(authorize.getIs_virtual() == 1)
-            		label = "VIRTUAL";
-            	
-            	virRealLabel.setText(label);
-            	
-            	//setting balance
-            	balanceLabel.setText(authorize.getBalance());
-            }
-        });
-	}
-	
 	/**
 	 * Write message to logs 'TextFlow'
 	 * @param message
@@ -264,16 +258,35 @@ public class MainController implements Initializable{
     
 	}
 	
-	public void addLossPoint(XYChart.Data<Number, Number> point){
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                lossSeries.getData().add(point);
-            }
-        });  
-        
-    }
+	public void updateView(XYChart.Data<Number, Number> point, Float balance, Float profit) {
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				if(point != null) {
+					lossSeries.getData().add(point);
+				}
+				
+				if(balance != null) {
+					balanceLabel.setText(String.valueOf(balance));
+				}
+				
+				if(profit != null) {
+					float f = Ledger.round(profit, 1);
+					profitLabel.setText(String.valueOf(f));
+				}
+			}
+		});
+	}
 
+	//SETTERS
+	public void setTimeUnits(String value) {
+		for (TimeUnits unit : TimeUnits.values()) {
+			if(unit.toString().equals(value))
+				timeUnits = unit;
+		}
+	}
+	
+	//GETTERS
 	public long getDuration() {
 		return Integer.parseInt(expirationInput.getText());
 	}
@@ -285,35 +298,12 @@ public class MainController implements Initializable{
 	public TimeUnits getTimeUnits() {
 		return timeUnits;
 	}
-
-	public void setTimeUnits(String value) {
-		for (TimeUnits unit : TimeUnits.values()) {
-			if(unit.toString().equals(value))
-				timeUnits = unit;
-		}
+	
+	private float getStopLoss() {
+		return Float.parseFloat(stopLossInput.getText());
 	}
 
-	public void updateProfit(float newValue) {
-		Platform.runLater(new Runnable() {
-			
-			@Override
-			public void run() {
-				float f = Ledger.round(newValue, 1);
-				
-				profitLabel.setText(String.valueOf(f));
-			}
-		});
+	public float getFactor() {
+		return Float.parseFloat(martiniFactorInput.getText());
 	}
-
-	public void updateBalance(float balance) {
-		Platform.runLater(new Runnable() {
-			
-			@Override
-			public void run() {
-				balanceLabel.setText(String.valueOf(balance));
-			}
-			
-		});
-	}
-
 }

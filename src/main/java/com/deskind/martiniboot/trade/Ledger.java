@@ -17,13 +17,11 @@ public class Ledger {
 	private float stopLoss;
 	private float martiniFactor;
 	
-	private int oneRowWins;
-	private int oneRowLooses;
-	private int allContractsCounter;
+	private int allTimeWins;
+	private int allTimeLooses;
+	private int allTimeContracts;
 	private int wins;
 	private int looses;
-	
-	private List<Character> results = new ArrayList<Character>();
 	
 	private String currentContractId;
 	
@@ -32,9 +30,9 @@ public class Ledger {
 		this.stopLoss = stopLoss;
 	}
 
-	//INSTANCE METHODS
-	
 	public void updateCounters(float amount) {
+		allTimeContracts++;
+		
 		if(amount > 0) {
 			wins++;
 		}else {
@@ -55,95 +53,6 @@ public class Ledger {
 		}
 	}
 	
-	public void updateWinProfit(float amount, MainController controller, float balance) {
-		int size = results.size();
-		
-		char last = '\u0000';
-		char beforeLast = '\u0000';
-		
-		if(size >= 2) {
-			last = results.get(size - 1);
-			beforeLast = results.get(size - 2);
-		}
-		
-		float pureProfit = amount - currentStake;
-		
-		profit += pureProfit;
-		
-		if(oneRowWins == 2) {
-			loss = 0;
-		}else if(oneRowWins == 1 && allContractsCounter == 1){
-			loss = 0;
-		}else if(beforeLast == '-' && last == '+' && loss != 0){
-			loss -= pureProfit;
-		}else if(beforeLast == '-' && last == '+' && loss == 0){
-			loss = 0;
-		}
-		
-		
-		controller.updateProfit(profit);
-		controller.updateBalance(balance);
-		int pointNumber = allContractsCounter;
-		controller.addLossPoint(new XYChart.Data<>(pointNumber, loss));
-		controller.writeMessage("Result " + round(pureProfit, 1), false, false);
-	}
-
-	public void updateLooseProfit(float amount, MainController controller, float balance) {
-		
-		loss += currentStake;
-		
-		profit -= currentStake;
-		
-		controller.updateProfit(profit);
-		controller.updateBalance(balance);
-		int pointNumber = allContractsCounter;
-		controller.addLossPoint(new XYChart.Data<>(pointNumber, loss));
-		controller.writeMessage("Result " + round(currentStake, 1), true, false);
-	}
-	
-	/*
-	 * 1. Checking stop loss
-	 * 2. Process characters in results
-	 * 3. Return stake size
-	 */
-	public float calculateNextStake(LuckyGuy luckyGuy) {
-		
-		if(stopLossCheck()) {
-			//reset counters
-			loss = 0;
-			oneRowWins = 0;
-			oneRowLooses = 0;
-			
-			MartiniBootApplication.getMainController().writeMessage("STOP LOSS", true, false);
-			
-			MartiniBootApplication.getMainController().addLossPoint(new XYChart.Data<Number, Number>(allContractsCounter, 0));
-			
-			return luckyGuy.getLot();
-		}
-		
-		float stake = 0f;
-		
-		int size = results.size();
-		
-		char last = '\u0000';
-		char beforeLast = '\u0000';
-		
-		if(size >= 2) {
-			last = results.get(size - 1);
-			beforeLast = results.get(size - 2);
-		}
-		
-		if(oneRowWins >= 2 || (oneRowWins == 1 && allContractsCounter == 1)) {
-			stake = luckyGuy.getLot();
-		}else if(beforeLast == '-' && last == '+') {
-			stake = currentStake;
-		}else{
-			stake = loss / 2 / martiniFactor;
-		}
-		
-		return round(stake, 1);
-	}
-	
 	private boolean stopLossCheck() {
 		
 		if(loss > stopLoss)
@@ -153,7 +62,7 @@ public class Ledger {
 	}
 
 	/**
-	 * rounding stake value
+	 * Round float value to specified amount of decimal places
 	 * @param number
 	 * @param decimalPlace
 	 * @return
@@ -182,23 +91,23 @@ public class Ledger {
 	public void setMartiniFactor(float martiniFactor) {
 		this.martiniFactor = martiniFactor;
 	}
-	public int getOneRowWins() {
-		return oneRowWins;
+	public int getallTimeWins() {
+		return allTimeWins;
 	}
-	public void setOneRowWins(int oneRowWins) {
-		this.oneRowWins = oneRowWins;
+	public void setallTimeWins(int allTimeWins) {
+		this.allTimeWins = allTimeWins;
 	}
-	public int getOneRowLooses() {
-		return oneRowLooses;
+	public int getallTimeLooses() {
+		return allTimeLooses;
 	}
-	public void setOneRowLooses(int oneRowLooses) {
-		this.oneRowLooses = oneRowLooses;
+	public void setallTimeLooses(int allTimeLooses) {
+		this.allTimeLooses = allTimeLooses;
 	}
-	public int getAllContractsCounter() {
-		return allContractsCounter;
+	public int getAllTimeContracts() {
+		return allTimeContracts;
 	}
-	public void setAllContractsCounter(int allContractsCounter) {
-		this.allContractsCounter = allContractsCounter;
+	public void setAllTimeContracts(int allTimeContracts) {
+		this.allTimeContracts = allTimeContracts;
 	}
 	
 	public float getCurrentStake() {
@@ -218,8 +127,8 @@ public class Ledger {
 	@Override
 	public String toString() {
 		return "Ledger [currentStake=" + currentStake + ", profit=" + profit + ", loss=" + loss + ", stopLoss="
-				+ stopLoss + ", martiniFactor=" + martiniFactor + ", oneRowWins=" + oneRowWins + ", oneRowLooses="
-				+ oneRowLooses + ", allContractsCounter=" + allContractsCounter + "]";
+				+ stopLoss + ", martiniFactor=" + martiniFactor + ", allTimeWins=" + allTimeWins + ", allTimeLooses="
+				+ allTimeLooses + ", allTimeContracts=" + allTimeContracts + "]";
 	}
 
 	public void setCurrentContractId(String id) {
