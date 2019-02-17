@@ -1,6 +1,8 @@
 package com.deskind.martiniboot.connection;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
@@ -15,10 +17,14 @@ import com.deskind.martiniboot.binary.entities.Authorization;
 import com.deskind.martiniboot.binary.entities.Authorize;
 import com.deskind.martiniboot.binary.entities.Buy;
 import com.deskind.martiniboot.binary.entities.MessageType;
+import com.deskind.martiniboot.binary.entities.ProfitTableEntry;
 import com.deskind.martiniboot.binary.entities.Transaction;
 import com.deskind.martiniboot.binary.responses.BuyResponse;
+import com.deskind.martiniboot.binary.responses.ProfitTableResponse;
 import com.deskind.martiniboot.binary.responses.TransactionUpdate;
 import com.deskind.martiniboot.controllers.MainController;
+import com.deskind.martiniboot.runnables.MissedSellEventCheck;
+import com.deskind.martiniboot.runnables.ReconnectTask;
 import com.deskind.martiniboot.trade.Ledger;
 import com.deskind.martiniboot.trade.flow.Flow;
 import com.deskind.martiniboot.trade.flow.RandomFlow;
@@ -71,10 +77,26 @@ public class ApplicationEndpoint {
             	
             	return;
             }
+            
+            case "profit_table":{
+            	processProfitTable(gson, message);
+            	
+            	return;
+            }
     	}
 	}
 	
+	private void processProfitTable(Gson gson, String message) {
+		ProfitTableResponse profitTableResponse = gson.fromJson(message,  ProfitTableResponse.class);
+		ProfitTableEntry[] transactions = profitTableResponse.getProfit_table().getTransactions();
+		
+		Thread t = new Thread(new MissedSellEventCheck(flow, transactions));
+		t.start();
+		
+	}
+
 	private void processBuy(Gson gson, String message) {
+		
 		BuyResponse buyResponse = gson.fromJson(message, BuyResponse.class);
 		
 		//remember contract id
@@ -120,7 +142,7 @@ public class ApplicationEndpoint {
 		}
 		
 		//update balance
-		controller.updateView(null, null, Float.parseFloat(authorize.getBalance()));
+		controller.updateView(null, Float.parseFloat(authorize.getBalance()), null);
 		
 		//message to user
 		controller.writeMessage("AUTHORIZED", false, true);
@@ -130,7 +152,7 @@ public class ApplicationEndpoint {
 	@OnClose
 	public void onClose(CloseReason reason) {
 		
-		String closeMessage = String.format("DISCONNECTED. Reason: %s. Phrase: %s", 
+		String closeMessage = String.format("CONNECTION CLOSED. Reason: %s. Phrase: %s", 
 																reason.getCloseCode().toString(), 
 																reason.getReasonPhrase());
 		
@@ -142,13 +164,11 @@ public class ApplicationEndpoint {
 		}else {
 			//messages to user
 			controller.writeMessage(closeMessage, true, true);
-			controller.writeMessage("Atemp to restart", true, true);
 			
-			//asking a socket for reconnect
-			SocketPlug plug = MartiniBootApplication.getSocketPlug();
-			plug.connect().
-					authorize(MartiniBootApplication.getLuckyGuy().getToken()).
-					subscribe();
+			//Start new thread for reconnecting
+			Thread t = new Thread(new ReconnectTask(MartiniBootApplication.getSocketPlug()));
+			t.setName("+++Reconnect Thread+++");
+			t.start();
 		}
 	}
 	
@@ -160,12 +180,6 @@ public class ApplicationEndpoint {
 		
 		//message to user
 		controller.writeMessage("CONNECTION ERROR", true, true);
-		
-		//reconnect process
-		SocketPlug plug = MartiniBootApplication.getSocketPlug();
-		plug.connect().
-				authorize(MartiniBootApplication.getLuckyGuy().getToken()).
-				subscribe();
 		
 	}
 }

@@ -18,9 +18,10 @@ import com.deskind.martiniboot.MartiniBootApplication;
  */
 public class SocketPlug {
 	
+	private static final int DELAY_TIME = 3_000;
 	private final String appId = "15135";
 	private Session session;
-			
+	
 	/**
 	 * Connecting to server
 	 */
@@ -48,7 +49,7 @@ public class SocketPlug {
 		sendMessage(authorize);
 		
 		try {
-			Thread.sleep(1500);
+			Thread.sleep(DELAY_TIME);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -86,7 +87,7 @@ public class SocketPlug {
 		sendMessage("{\"transaction\": 1, \"subscribe\": 1}");
 		
 		try {
-			Thread.sleep(1500);
+			Thread.sleep(DELAY_TIME);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -95,5 +96,5 @@ public class SocketPlug {
 		
 		return this;
 	}
-
+	
 }

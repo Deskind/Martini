@@ -12,15 +12,15 @@ import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.analysys.Analyst;
 import com.deskind.martiniboot.analysys.DoubleCallPutAnalyst;
 import com.deskind.martiniboot.analysys.RandomAnalyst;
+import com.deskind.martiniboot.analysys.RotateAnalyst;
+import com.deskind.martiniboot.analysys.TripleCallPutAnalyst;
 import com.deskind.martiniboot.analysys.UpDownAnalyst;
-import com.deskind.martiniboot.binary.entities.Authorize;
 import com.deskind.martiniboot.connection.SocketPlug;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.managers.UserInputManager;
 import com.deskind.martiniboot.trade.Ledger;
 import com.deskind.martiniboot.trade.SymbolGenerator;
 import com.deskind.martiniboot.trade.TimeUnits;
-import com.deskind.martiniboot.trade.flow.Flow;
 import com.deskind.martiniboot.trade.flow.RandomFlow;
 
 import javafx.application.Platform;
@@ -49,12 +49,14 @@ public class MainController implements Initializable{
 	/*
 	 * Available strategies
 	 */
+	private final String ROTATE_STRATEGY = "Rotate";
 	private final String RANDOM_STRATEGY = "Random";
 	private final String SINGLE_CALL_PUT_STRATEGY = "Single call/put";
 	private final String DOUBLE_CALL_PUT_STRATEGY = "Double call/put";
+	private final String TRIPLE_CALL_PUT_STRATEGY = "Triple call/put";
 	
 	/*
-	 * Time unit for making stake
+	 * Time unit for making stake ('t', 's', 'm')
 	 */
 	private TimeUnits timeUnits;
 	
@@ -71,6 +73,9 @@ public class MainController implements Initializable{
 	
 	@FXML
 	private TextField tokenInput, lotInput, expirationInput, stopLossInput, martiniFactorInput;
+	
+	@FXML
+	private Label wins, looses, winRate, moneyAmount;
 	
 	@FXML 
 	private TextFlow tradeMessages, logMessages;
@@ -177,7 +182,9 @@ public class MainController implements Initializable{
 	public void initialize(URL location, ResourceBundle resources) {
 		
 		//set up choices for strategies
-		strategyChoice.getItems().addAll(DOUBLE_CALL_PUT_STRATEGY,
+		strategyChoice.getItems().addAll(ROTATE_STRATEGY,
+											DOUBLE_CALL_PUT_STRATEGY,
+											TRIPLE_CALL_PUT_STRATEGY,
 											SINGLE_CALL_PUT_STRATEGY,
 											RANDOM_STRATEGY);
 		
@@ -218,6 +225,10 @@ public class MainController implements Initializable{
     		return new UpDownAnalyst();
     	else if(name.equals(DOUBLE_CALL_PUT_STRATEGY))
     		return new DoubleCallPutAnalyst();
+		else if(name.equals(ROTATE_STRATEGY))
+			return new RotateAnalyst(new RandomAnalyst(), new UpDownAnalyst(), new DoubleCallPutAnalyst());
+    	else if(name.equals(TRIPLE_CALL_PUT_STRATEGY))
+    		return new TripleCallPutAnalyst();
     	else 
     		return null;
     	
@@ -276,6 +287,29 @@ public class MainController implements Initializable{
 				}
 			}
 		});
+	}
+	
+	public void updateStatisticData(String wins, String looses, String winRate, String moneyAmount) {
+		
+		Platform.runLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				//wins
+				MainController.this.wins.setText("W: " + wins);
+				
+				//looses
+				MainController.this.looses.setText("L: " + looses);
+				
+				//winRate
+				MainController.this.winRate.setText("WR: " + winRate + "%");
+				
+				//moneyAmount
+				MainController.this.moneyAmount.setText("M: " + moneyAmount + "$");
+				
+			}
+		});
+		
 	}
 
 	//SETTERS

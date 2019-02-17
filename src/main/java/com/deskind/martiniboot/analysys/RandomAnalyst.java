@@ -21,9 +21,9 @@ public class RandomAnalyst implements Analyst{
         int randomInt = random.nextInt(777);
         
         if(randomInt%2 == 0){
-            return "call";
+            return "CALL";
         }else{
-            return "put";
+            return "PUT";
         }
     }
     

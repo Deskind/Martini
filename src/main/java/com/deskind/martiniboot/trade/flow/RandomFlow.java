@@ -1,10 +1,14 @@
 package com.deskind.martiniboot.trade.flow;
 
+import java.util.Timer;
+
 import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.analysys.Analyst;
+import com.deskind.martiniboot.analysys.RotateAnalyst;
 import com.deskind.martiniboot.binary.entities.BuyParameters;
 import com.deskind.martiniboot.binary.entities.Transaction;
 import com.deskind.martiniboot.binary.requests.BuyRequest;
+import com.deskind.martiniboot.connection.SocketPlug;
 import com.deskind.martiniboot.controllers.MainController;
 import com.deskind.martiniboot.entities.LuckyGuy;
 import com.deskind.martiniboot.trade.Ledger;
@@ -30,6 +34,8 @@ public class RandomFlow{
 	private boolean stopRequest;
 	private boolean suspended;
 	private long  currentContractId;
+	
+	public boolean contractMissed;
 	
 	public RandomFlow(LuckyGuy luckyGuy, Ledger ledger, Analyst strategy, MainController controller) {
 		super();
@@ -79,10 +85,12 @@ public class RandomFlow{
 				//update balance label
 				controller.updateView(null, balance, null);
 				
-				ledger.updateCounters(amount);
+				ledger.updateCounters(amount, amount > 0);
 				
 				//win case
 				if(amount > 0) {
+					
+					ledger.oneRowLooses = 0;
 					
 					//calculate profit
 					float stakeProfit = amount - ledger.getCurrentStake();
@@ -112,6 +120,8 @@ public class RandomFlow{
 					
 				//loose case	
 				}else {
+					ledger.oneRowLooses++;
+					
 					//calculate profit 
 					ledger.setProfit(ledger.getProfit() - ledger.getCurrentStake());
 					
@@ -123,6 +133,16 @@ public class RandomFlow{
 					
 					//calculate new stake
 					stake = ledger.getLoss() / 2 / ledger.getMartiniFactor();
+				}
+				
+				//If we use analysts rotation
+				if(analyst instanceof RotateAnalyst && ledger.oneRowLooses > 0 && ledger.oneRowLooses % 4 == 0) {
+					
+					//Cast to RotateAnalyst
+					RotateAnalyst rotateAnalyst = (RotateAnalyst)analyst;
+					
+					//Switch to next analyst
+					rotateAnalyst.rotate();
 				}
 				
 				buyRequestParameters = new BuyParameters(ledger.round(stake, 1),
@@ -140,9 +160,16 @@ public class RandomFlow{
 								null,
 								ledger.getProfit());
 		
+		//update statistics
+		controller.updateStatisticData(String.valueOf(ledger.getallTimeWins()),
+				String.valueOf(ledger.getallTimeLooses()),
+				String.valueOf("--"),
+				String.valueOf(ledger.getMoneyAmount()));
+		
 		//App in random mode and not suspended
 		if(MartiniBootApplication.isRandomMode() && !isSuspended()) {
 			
+			//Sending buy message
 			MartiniBootApplication.getSocketPlug().sendMessage(new Gson().toJson(buyRequest));
 			
 			//all stakes counter

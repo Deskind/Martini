@@ -2,6 +2,7 @@ package com.deskind.martiniboot.runnables;
 
 import java.util.TimerTask;
 
+import com.deskind.martiniboot.MartiniBootApplication;
 import com.deskind.martiniboot.connection.SocketPlug;
 
 public class AliveTask extends TimerTask {
@@ -19,7 +20,7 @@ public class AliveTask extends TimerTask {
 		if(plug.connected()) {
 			plug.sendMessage(PING_MESSAGE);
 		}else {
-//			System.out.println("...Enable to send ping message because of closed session ...");
+			
 		}
 	}
 

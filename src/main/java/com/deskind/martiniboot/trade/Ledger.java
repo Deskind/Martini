@@ -23,20 +23,30 @@ public class Ledger {
 	private int wins;
 	private int looses;
 	
-	private String currentContractId;
+	private long moneyAmount;
+	
+	public int oneRowLooses;
 	
 	public Ledger(float martiniFactor, float stopLoss) {
 		this.martiniFactor = martiniFactor;
 		this.stopLoss = stopLoss;
 	}
 
-	public void updateCounters(float amount) {
+	public void updateCounters(float amount, boolean isWin) {
 		allTimeContracts++;
 		
 		if(amount > 0) {
 			wins++;
 		}else {
 			looses++;
+		}
+		
+		if(isWin) {
+			allTimeWins++;
+			moneyAmount += amount;
+		}else {
+			allTimeLooses++;
+			moneyAmount += currentStake + currentStake * 0.94;
 		}
 	}
 	
@@ -131,14 +141,6 @@ public class Ledger {
 				+ allTimeLooses + ", allTimeContracts=" + allTimeContracts + "]";
 	}
 
-	public void setCurrentContractId(String id) {
-		currentContractId = id;
-	}
-
-	public String getCurrentContractId() {
-		return currentContractId;
-	}
-
 	public int getWins() {
 		return wins;
 	}
@@ -159,7 +161,10 @@ public class Ledger {
 		loss = 0;
 	}
 
+	public float getMoneyAmount() {
+		return round(moneyAmount, 1);
+	}
 	
-
+	
 	
  }

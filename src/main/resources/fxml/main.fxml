@@ -19,7 +19,7 @@
 <?import javafx.scene.text.TextFlow?>
 <?import com.deskind.martiniboot.customtextfields.*?>
 
-<AnchorPane id="AnchorPane" prefHeight="535.0" prefWidth="1233.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.deskind.martiniboot.controllers.MainController">
+<AnchorPane id="AnchorPane" prefHeight="580.0" prefWidth="1233.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.deskind.martiniboot.controllers.MainController">
     <children>
         <Label fx:id="label" layoutX="91.0" layoutY="38.0" minHeight="16" minWidth="69" />
       <Label layoutX="1079.0" layoutY="16.0" text="MARTINI" textFill="#1a1ac3">
@@ -116,5 +116,25 @@
       <ChoiceBox fx:id="strategyChoice" disable="true" layoutX="22.0" layoutY="300.0" prefWidth="150.0" />
       <ChoiceBox fx:id="timeUnitChoice" disable="true" layoutX="103.0" layoutY="269.0" prefHeight="25.0" prefWidth="76.0" />
       <Label layoutX="102.0" layoutY="253.0" prefHeight="17.0" prefWidth="47.0" text="Unit" />
+      <Label fx:id="wins" layoutX="25.0" layoutY="537.0" prefHeight="27.0" prefWidth="80.0" style="-fx-text-fill: #1eb027;" text="W: 0" underline="true">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Label>
+      <Label fx:id="looses" layoutX="140.0" layoutY="537.0" prefWidth="80.0" style="-fx-text-fill: #d61212;" text="L: 0" underline="true">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Label>
+      <Label fx:id="winRate" layoutX="260.0" layoutY="537.0" prefWidth="80.0" style="-fx-text-fill: #14c9c5;" text="WR: 0" underline="true">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Label>
+      <Label fx:id="moneyAmount" layoutX="400.0" layoutY="537.0" prefWidth="80.0" style="-fx-text-fill: #4b5a6b;" text="M: 0" underline="true">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Label>
     </children>
 </AnchorPane>
